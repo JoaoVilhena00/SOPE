@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
 
 #define true 1
 #define false 0
@@ -33,8 +38,30 @@ void invalidOption(char *argv[], char *option, int r) {
   exit(r);
 }
 
-void printDir(char *dirName){
+void printDir(char *dirName) {
   fprintf(stderr, "Directory: ./%s\n", dirName);
+}
+
+//Lista os Ficheiros Regulares (para ja)
+int list_contents(char *dirName) {
+  struct dirent *dentry;
+  struct stat stat_entry;
+  DIR *dir;
+
+  dir = opendir(dirName);
+
+  chdir(dirName);
+  fprintf(stderr, "Files of ");
+  printDir(dirName);
+
+  while((dentry = readdir(dir)) != NULL) {
+    stat(dentry->d_name, &stat_entry);
+    if (S_ISREG(stat_entry.st_mode)) {
+      printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
+    }
+  }
+
+  return 0;
 }
 
 
@@ -96,6 +123,8 @@ int main(int argc, char *argv[], char *envp[]) {
     for (int i = 0; i <= argc - 4; i++) { //So para questoes de teste
         printf("%s %d\n", options[i], i);
     }
+
+    list_contents(dirName);
 
     return 0;
 }
