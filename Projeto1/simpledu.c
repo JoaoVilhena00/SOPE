@@ -8,7 +8,7 @@
 int validOption(char *option) {
 
     if(!strcmp(option, "-a") || !strcmp(option, "-b") || !strcmp(option, "-B") 
-        || !strcmp(option, "-L") || !strcmp(option, "-S") || !strcmp(option, "-N")) {
+        || !strcmp(option, "-L") || !strcmp(option, "-S") || !strcmp(option, "--max-depth")) {
             return true;
     }
     return false;
@@ -17,8 +17,8 @@ int validOption(char *option) {
 
 int main(int argc, char *argv[], char *envp[]) {
 
-    char dirName[100], *options[8];
-    int j = 0;
+    char dirName[100], *options[8], maxDepth[12];
+    int j = 0, k =0;
 
     
     if(argc < 2 || strcmp(argv[1],"-l")) {
@@ -35,13 +35,23 @@ int main(int argc, char *argv[], char *envp[]) {
             strcpy(dirName,argv[i]);
             printf("%s\n",dirName);
         }
-        else {
+        else if(argv[i][0] == '-' && argv[i][1] != '-'){
             options[j] = argv[i];
             if(!validOption(options[j])) {
                 printf("%s is a invalid option\n", options[j]);
                 exit(2);
             }
             j++;
+        }
+        else if(argv[i][0] == '-' && argv[i][1] == '-'){ //temporario ate arranjar soluçao melhor
+           for(int k=0; k<11; k++) {
+                maxDepth[k] = argv[i][k];
+            }
+            options[j] = argv[i];
+            if(!validOption(maxDepth)) {
+                printf("%s is a invalid option\n", options[j]);
+                exit(3);
+            }
         }
     }
     
