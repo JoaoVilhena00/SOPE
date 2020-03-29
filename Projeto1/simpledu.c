@@ -5,26 +5,46 @@
 #define true 1
 #define false 0
 
-int validOption(char *option) {  
+int validOption(char *option) {
 
-    if (!strcmp(option, "-a") || !strcmp(option, "-b") || !strcmp(option, "-B") 
-        || !strcmp(option, "-L") || !strcmp(option, "-S") || !strcmp(option, "--max-depth") 
-        || !strcmp(option, "--block-size") || !strcmp(option, "--all") || !strcmp(option, "--bytes") 
-        || !strcmp(option, "--count-links") || !strcmp(option, "--dereference") || !strcmp(option, "--dereference") 
+    if (!strcmp(option, "-a") || !strcmp(option, "-b") || !strcmp(option, "-B")
+        || !strcmp(option, "-L") || !strcmp(option, "-S") || !strcmp(option, "--max-depth")
+        || !strcmp(option, "--block-size") || !strcmp(option, "--all") || !strcmp(option, "--bytes")
+        || !strcmp(option, "--count-links") || !strcmp(option, "--dereference") || !strcmp(option, "--dereference")
         || !strcmp(option, "--separate-dirs")) {
         return true;
     }
     return false;
 }
 
+void printUsage(char *argv[]) {
+  fprintf(stderr, "Usage: %s -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]\n", argv[0]);
+}
+
+void invalidArgs(char *argv[]) {
+  fprintf(stderr, "Invalid Arguments!\n");
+  printUsage(argv);
+  exit(1);
+}
+
+void invalidOption(char *argv[], char *option, int r) {
+  fprintf(stderr, "%s is not a valid option!\n", option);
+  printUsage(argv);
+  exit(r);
+}
+
+void printDir(char *dirName){
+  fprintf(stderr, "Directory: ./%s\n", dirName);
+}
+
+
 int main(int argc, char *argv[], char *envp[]) {
 
     char dirName[100], *options[8], maxDepth[12], blockSize[20];
     int j = 0, l = 0;
 
-    if (argc < 2 || strcmp(argv[1], "-l") || strcmp(argv[1], "--cout-links")) { //Verifica se o utilizador degita a opçao -l 
-        printf("Invalid Arguments!\n");
-        exit(1);
+    if (argc < 2 || (strcmp(argv[1], "-l") && strcmp(argv[1], "--cout-links"))) { //Verifica se o utilizador degita a opçao -l
+        invalidArgs(argv);
     }
 
     if (argc == 2){
@@ -34,13 +54,12 @@ int main(int argc, char *argv[], char *envp[]) {
     for (int i = 2; i < argc; i++){
         if (argv[i][0] != '-'){ // Adiciona o diretorio introduzido pelo utilizador a variavel dirName
             strcpy(dirName, argv[i]);
-            printf("%s\n", dirName);
+            printDir(dirName);
         }
         else if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
             options[j] = argv[i];
             if (!validOption(options[j])){
-                printf("%s is a invalid option\n", options[j]);
-                exit(2);
+                invalidOption(argv, options[j], 2);
             }
             j++;
         }
@@ -54,8 +73,7 @@ int main(int argc, char *argv[], char *envp[]) {
                 options[j] = argv[i];
                 l = 0;
                 if (!validOption(maxDepth)) {
-                    printf("%s is a invalid option\n", options[j]);
-                    exit(3);
+                    invalidOption(argv, options[j], 3);
                 }
             }else if (argv[i][2] == 'b') { //Adiciona ao options block-size
                 while (argv[i][l] != '=') {
@@ -66,8 +84,7 @@ int main(int argc, char *argv[], char *envp[]) {
                 options[j] = argv[i];
                 l = 0;
                 if (!validOption(blockSize)) {
-                    printf("%s is a invalid option\n", options[j]);
-                    exit(3);
+                    invalidOption(argv, options[j], 3);
                 }
             }else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
                 options[j] = argv[i];
