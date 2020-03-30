@@ -12,11 +12,11 @@
 
 int validOption(char *option) {
 
-    if (!strcmp(option, "-a") || !strcmp(option, "-b") || !strcmp(option, "-B")
-        || !strcmp(option, "-L") || !strcmp(option, "-S") || !strcmp(option, "--max-depth")
-        || !strcmp(option, "--block-size") || !strcmp(option, "--all") || !strcmp(option, "--bytes")
-        || !strcmp(option, "--count-links") || !strcmp(option, "--dereference") || !strcmp(option, "--dereference")
-        || !strcmp(option, "--separate-dirs")) {
+    if (!strcmp(option, "a") || !strcmp(option, "b") || !strcmp(option, "B")
+        || !strcmp(option, "L") || !strcmp(option, "S") || !strcmp(option, "max-depth")
+        || !strcmp(option, "block-size") || !strcmp(option, "all") || !strcmp(option, "bytes")
+        || !strcmp(option, "count-links") || !strcmp(option, "dereference") || !strcmp(option, "dereference")
+        || !strcmp(option, "separate-dirs")) {
         return true;
     }
     return false;
@@ -84,43 +84,49 @@ int main(int argc, char *argv[], char *envp[]) {
             printDir(dirName);
         }
         else if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
-            options[j] = argv[i];
-            if (!validOption(options[j])){
+            if (!validOption(argv[1])){
                 invalidOption(argv, options[j], 2);
             }
+            *options[j] = argv[i][1];
             j++;
         }
         else if (argv[i][0] == '-' && argv[i][1] == '-'){ //temporario ate arranjar soluçao melhor
+            l = 0;
             if (argv[i][2] == 'm') { //Adiciona ao options max-depth
-                while (argv[i][l] != '='){
-                    maxDepth[l] = argv[i][l];
+                while (argv[i][l+2] != '='){
+                    maxDepth[l] = argv[i][l+2];
                     l++;
                 }
                 maxDepth[l] = '\0';
-                options[j] = argv[i];
+                options[j] = maxDepth;
                 l = 0;
                 if (!validOption(maxDepth)) {
                     invalidOption(argv, options[j], 3);
                 }
             }else if (argv[i][2] == 'b') { //Adiciona ao options block-size
                 while (argv[i][l] != '=') {
-                    blockSize[l] = argv[i][l];
+                    blockSize[l] = argv[i][l+2];
                     l++;
                 }
                 blockSize[l] = '\0';
-                options[j] = argv[i];
-                l = 0;
+                options[j] = blockSize;
                 if (!validOption(blockSize)) {
                     invalidOption(argv, options[j], 3);
                 }
             }else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
-                options[j] = argv[i];
+                while(argv[i][l+2] != '\0') {
+                    options[j][l] = argv[i][l+2];
+                    l++;
+                }
+                options[j][l] = '\0';
+                if (!validOption(options[j])) {
+                    invalidOption(argv, options[j], 3);
             }
             j++;
         }
     }
 
-    for (int i = 0; i <= argc - 4; i++) { //So para questoes de teste
+    for (int i = 0; i < argc - 3; i++) { //So para questoes de teste
         printf("%s %d\n", options[i], i);
     }
 
