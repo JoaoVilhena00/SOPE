@@ -22,6 +22,32 @@ int validOption(char *option) {
     return false;
 }
 
+char *  makeOptinsDiff(char *option, char *specialOption) {
+
+    int l = 0;
+    
+    while (option[l+2] != '='){
+        specialOption[l] = option[l+2];
+        l++;
+    }
+    specialOption[l] = '\0';
+    
+    return specialOption;
+}
+
+void sort() {
+
+
+
+}
+
+void checkRepeatedElements() {
+
+
+
+}
+
+
 void printUsage(char *argv[]) {
   fprintf(stderr, "Usage: %s -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]\n", argv[0]);
 }
@@ -67,7 +93,7 @@ int list_contents(char *dirName) {
 
 int main(int argc, char *argv[], char *envp[]) {
 
-    char dirName[100], *options[8], maxDepth[12], blockSize[20];
+    char dirName[100], *options[8], maxDepth[15], blockSize[15];
     int j = 0, l = 0;
 
     if (argc < 2 || (strcmp(argv[1], "-l") && strcmp(argv[1], "--cout-links"))) { //Verifica se o utilizador degita a opçao -l
@@ -77,53 +103,38 @@ int main(int argc, char *argv[], char *envp[]) {
     if (argc == 2){
         //em desenvolvimento
     }
-
     for (int i = 2; i < argc; i++){
         if (argv[i][0] != '-'){ // Adiciona o diretorio introduzido pelo utilizador a variavel dirName
             strcpy(dirName, argv[i]);
             printDir(dirName);
         }
         else if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
-            if (!validOption(argv[1])){
-                invalidOption(argv, options[j], 2);
-            }
             *options[j] = argv[i][1];
+            options[j][1] = '\0';
+            if(!validOption(options[j])){
+                invalidOption(argv, argv[i], 2);
+            }
             j++;
         }
         else if (argv[i][0] == '-' && argv[i][1] == '-'){ //temporario ate arranjar soluçao melhor
-            l = 0;
             if (argv[i][2] == 'm') { //Adiciona ao options max-depth
-                while (argv[i][l+2] != '='){
-                    maxDepth[l] = argv[i][l+2];
-                    l++;
-                }
-                maxDepth[l] = '\0';
-                options[j] = maxDepth;
-                l = 0;
+                options[j] = makeOptinsDiff(argv[i], maxDepth);
                 if (!validOption(maxDepth)) {
-                    invalidOption(argv, options[j], 3);
+                    invalidOption(argv, argv[i], 3);
                 }
             }else if (argv[i][2] == 'b') { //Adiciona ao options block-size
-                while (argv[i][l] != '=') {
-                    blockSize[l] = argv[i][l+2];
-                    l++;
-                }
-                blockSize[l] = '\0';
-                options[j] = blockSize;
+                options[j] = makeOptinsDiff(argv[i], blockSize);
                 if (!validOption(blockSize)) {
-                    invalidOption(argv, options[j], 3);
+                    invalidOption(argv, argv[i], 3);
                 }
             }else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
-                while(argv[i][l+2] != '\0') {
-                    options[j][l] = argv[i][l+2];
-                    l++;
-                }
-                options[j][l] = '\0';
+                options[j] = makeOptinsDiff(argv[i], options[j]);
                 if (!validOption(options[j])) {
-                    invalidOption(argv, options[j], 3);
+                    invalidOption(argv, argv[i], 3);
                 }
             }
             j++;
+        
         }
     }
 
@@ -135,3 +146,4 @@ int main(int argc, char *argv[], char *envp[]) {
 
     return 0;
 }
+
