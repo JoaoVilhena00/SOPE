@@ -121,6 +121,7 @@ int main(int argc, char *argv[], char *envp[]) {
                 options[j][l] = '\0';
                 if (!validOption(options[j])) {
                     invalidOption(argv, options[j], 3);
+                }
             }
             j++;
         }
