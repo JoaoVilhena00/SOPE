@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <errno.h>
+#include <ctype.h>
 
 #define true 1
 #define false 0
@@ -52,17 +53,36 @@ char * buildOption(char *argv, char *option, char * aux) {
 	return option;
 }
 
+void sort(char *options[], int size) {
 
-void sort() {
+    char aux[15];
 
-
-
+    for(int i=0; i<size; i++) {
+        for(int j=i+1; j<size; j++) {
+            if(strcmp(options[i],options[j]) > 0) {
+                strcpy(aux,options[i]);
+                strcpy(options[i], options[j]);
+                strcpy(options[j], aux);
+            }
+        }
+    }
+    
 }
 
-void checkRepeatedElements() {
+int checkRepeatedElements(char* options[], int size) {
+    
+    char last[15];
+    
+    sort(options, size);
 
-
-
+    for(int i=0; i<size; i++) {
+        if(strcmp(options[i], last) != 0) {
+            strcpy(last, options[i]);
+        }else {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -114,9 +134,11 @@ int main(int argc, char *argv[], char *envp[]) {
     char dirName[100], *options[8], maxDepth[15], blockSize[15], bSize[15], aux[3], forNow[15];
     int j = 0, l = 0;
 
+    
     for(int i=0; i<8; i++) {
-        *options = (char*) malloc(15*sizeof(char));
+        *(options+i) = (char*) malloc(15*sizeof(char));
     }
+    
 
 
     if (argc < 2 || (strcmp(argv[1], "-l") && strcmp(argv[1], "--cout-links"))) { //Verifica se o utilizador degita a opçao -l
@@ -133,45 +155,53 @@ int main(int argc, char *argv[], char *envp[]) {
         }
         if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
             if(argv[i][1] == 'B') {
-                options[j] = buildOption(argv[i], forNow, aux);
+                strcpy(options[j],buildOption(argv[i], forNow, aux));
                 if(!validOption(aux)){
                     invalidOption(argv, argv[i], 1);
                 }
             }
             else {
-                options[j] = buildOption(argv[i], forNow, aux);
+                strcpy(options[j], buildOption(argv[i], forNow, aux));
                 if(!validOption(options[j])){
                     invalidOption(argv, argv[i], 2);
                 }
             }
             j++;
         }
-        if (argv[i][0] == '-' && argv[i][1] == '-'){ //temporario ate arranjar soluçao melhor
+        else if (argv[i][0] == '-' && argv[i][1] == '-'){ //temporario ate arranjar soluçao melhor
             if (argv[i][2] == 'm') { //Adiciona ao options max-depth
-                options[j] = makeOptinsDiff(argv[i], maxDepth);
+            strcpy(options[j], makeOptinsDiff(argv[i], maxDepth));
+                printf("%s\n", options[j]);
                 if (!validOption(maxDepth)) {
                     invalidOption(argv, argv[i], 3);
                 }
             }
             else if (argv[i][2] == 'b') { //Adiciona ao options block-size
-                options[j] = makeOptinsDiff(argv[i], blockSize);
+                strcpy(options[j],makeOptinsDiff(argv[i], blockSize));
                 if (!validOption(blockSize)) {
                     invalidOption(argv, argv[i], 4);
                 }
             }
             else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
-                options[j] = makeOptinsDiff(argv[i], options[j]);
+                strcpy(options[j],makeOptinsDiff(argv[i], options[j]));
                 if (!validOption(options[j])) {
                     invalidOption(argv, argv[i], 5);
                 }
             }
             j++;
         }
+       
     }
-
+    printf("%d\n", j);
     for (int i = 0; i < argc - 3; i++) { //So para questoes de teste
-        printf("%s %d\n", options[i], i);
+        printf("%s-->%d\n", options[i], i);
     }
+    
+    if(checkRepeatedElements(options, argc-3) == true) {
+        printf("There is repeated elements\n");
+        exit(6);
+    }
+    
 
     list_contents(dirName);
 
