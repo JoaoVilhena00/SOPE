@@ -10,6 +10,9 @@
 #define true 1
 #define false 0
 
+//quando se passa -B size com outras opçoes exceto --max-depth da segmentation fault
+
+
 int validOption(char *option) {
 
     if (!strcmp(option, "a") || !strcmp(option, "b") || !strcmp(option, "B ")
