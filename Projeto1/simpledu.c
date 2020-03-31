@@ -35,19 +35,21 @@ char *  makeOptinsDiff(char *option, char *specialOption) {
     return specialOption;
 }
 
-void buildBsize(char *option, char *bSize, char * aux) {
+char * buildOption(char *argv, char *option, char * aux) {
 
     int l=0;
 
-    while(option[l+1] != '\0') {
-        bSize[l] = option[l+1];
+    while(argv[l+1] != '\0') {
+        option[l] = argv[l+1];
         l++;
     }
-    bSize[l] = '\0';
+    option[l] = '\0';
     
-    aux[0] = option[1];
-    aux[1] = option[2];
+    aux[0] = option[0];
+    aux[1] = option[1];
     aux[2] = '\0';
+	
+	return option;
 }
 
 
@@ -109,7 +111,7 @@ int list_contents(char *dirName) {
 
 int main(int argc, char *argv[], char *envp[]) {
 
-    char dirName[100], *options[8], maxDepth[15], blockSize[15], bSize[15], aux[3];
+    char dirName[100], *options[8], maxDepth[15], blockSize[15], bSize[15], aux[3], forNow[15];
     int j = 0, l = 0;
 
     for(int i=0; i<8; i++) {
@@ -131,14 +133,13 @@ int main(int argc, char *argv[], char *envp[]) {
         }
         if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
             if(argv[i][1] == 'B') {
-                buildBsize(argv[i], options[j], aux);
+                options[j] = buildOption(argv[i], forNow, aux);
                 if(!validOption(aux)){
-                    invalidOption(argv, argv[i], 2);
+                    invalidOption(argv, argv[i], 1);
                 }
             }
             else {
-                options[j][0] = argv[i][1];
-                options[j][1] = '\0';
+                options[j] = buildOption(argv[i], forNow, aux);
                 if(!validOption(options[j])){
                     invalidOption(argv, argv[i], 2);
                 }
@@ -155,13 +156,13 @@ int main(int argc, char *argv[], char *envp[]) {
             else if (argv[i][2] == 'b') { //Adiciona ao options block-size
                 options[j] = makeOptinsDiff(argv[i], blockSize);
                 if (!validOption(blockSize)) {
-                    invalidOption(argv, argv[i], 3);
+                    invalidOption(argv, argv[i], 4);
                 }
             }
             else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
                 options[j] = makeOptinsDiff(argv[i], options[j]);
                 if (!validOption(options[j])) {
-                    invalidOption(argv, argv[i], 3);
+                    invalidOption(argv, argv[i], 5);
                 }
             }
             j++;
