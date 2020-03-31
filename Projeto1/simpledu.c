@@ -12,7 +12,7 @@
 
 int validOption(char *option) {
 
-    if (!strcmp(option, "a") || !strcmp(option, "b") || !strcmp(option, "B")
+    if (!strcmp(option, "a") || !strcmp(option, "b") || !strcmp(option, "B ")
         || !strcmp(option, "L") || !strcmp(option, "S") || !strcmp(option, "max-depth")
         || !strcmp(option, "block-size") || !strcmp(option, "all") || !strcmp(option, "bytes")
         || !strcmp(option, "count-links") || !strcmp(option, "dereference") || !strcmp(option, "dereference")
@@ -34,6 +34,22 @@ char *  makeOptinsDiff(char *option, char *specialOption) {
     
     return specialOption;
 }
+
+void buildBsize(char *option, char *bSize, char * aux) {
+
+    int l=0;
+
+    while(option[l+1] != '\0') {
+        bSize[l] = option[l+1];
+        l++;
+    }
+    bSize[l] = '\0';
+    
+    aux[0] = option[1];
+    aux[1] = option[2];
+    aux[2] = '\0';
+}
+
 
 void sort() {
 
@@ -93,8 +109,13 @@ int list_contents(char *dirName) {
 
 int main(int argc, char *argv[], char *envp[]) {
 
-    char dirName[100], *options[8], maxDepth[15], blockSize[15];
+    char dirName[100], *options[8], maxDepth[15], blockSize[15], bSize[15], aux[3];
     int j = 0, l = 0;
+
+    for(int i=0; i<8; i++) {
+        *options = (char*) malloc(15*sizeof(char));
+    }
+
 
     if (argc < 2 || (strcmp(argv[1], "-l") && strcmp(argv[1], "--cout-links"))) { //Verifica se o utilizador degita a opçao -l
         invalidArgs(argv);
@@ -108,33 +129,42 @@ int main(int argc, char *argv[], char *envp[]) {
             strcpy(dirName, argv[i]);
             printDir(dirName);
         }
-        else if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
-            *options[j] = argv[i][1];
-            options[j][1] = '\0';
-            if(!validOption(options[j])){
-                invalidOption(argv, argv[i], 2);
+        if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
+            if(argv[i][1] == 'B') {
+                buildBsize(argv[i], options[j], aux);
+                if(!validOption(aux)){
+                    invalidOption(argv, argv[i], 2);
+                }
+            }
+            else {
+                options[j][0] = argv[i][1];
+                options[j][1] = '\0';
+                if(!validOption(options[j])){
+                    invalidOption(argv, argv[i], 2);
+                }
             }
             j++;
         }
-        else if (argv[i][0] == '-' && argv[i][1] == '-'){ //temporario ate arranjar soluçao melhor
+        if (argv[i][0] == '-' && argv[i][1] == '-'){ //temporario ate arranjar soluçao melhor
             if (argv[i][2] == 'm') { //Adiciona ao options max-depth
                 options[j] = makeOptinsDiff(argv[i], maxDepth);
                 if (!validOption(maxDepth)) {
                     invalidOption(argv, argv[i], 3);
                 }
-            }else if (argv[i][2] == 'b') { //Adiciona ao options block-size
+            }
+            else if (argv[i][2] == 'b') { //Adiciona ao options block-size
                 options[j] = makeOptinsDiff(argv[i], blockSize);
                 if (!validOption(blockSize)) {
                     invalidOption(argv, argv[i], 3);
                 }
-            }else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
+            }
+            else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
                 options[j] = makeOptinsDiff(argv[i], options[j]);
                 if (!validOption(options[j])) {
                     invalidOption(argv, argv[i], 3);
                 }
             }
             j++;
-        
         }
     }
 
