@@ -16,14 +16,14 @@ int validOption(char *option) {
     if (!strcmp(option, "a") || !strcmp(option, "b") || !strcmp(option, "B ")
         || !strcmp(option, "L") || !strcmp(option, "S") || !strcmp(option, "max-depth")
         || !strcmp(option, "block-size") || !strcmp(option, "all") || !strcmp(option, "bytes")
-        || !strcmp(option, "count-links") || !strcmp(option, "dereference") || !strcmp(option, "dereference")
+        || !strcmp(option, "dereference")
         || !strcmp(option, "separate-dirs")) {
         return true;
     }
     return false;
 }
 
-char *  makeOptinsDiff(char *option, char *specialOption) {
+char*  makeOptinsDiff(char *option, char *specialOption) {
 
     int l = 0;
     
@@ -36,7 +36,7 @@ char *  makeOptinsDiff(char *option, char *specialOption) {
     return specialOption;
 }
 
-char * buildOption(char *argv, char *option, char * aux) {
+char* buildOption(char *argv, char *option, char * aux) {
 
     int l=0;
 
@@ -85,6 +85,19 @@ int checkRepeatedElements(char* options[], int size) {
     return false;
 }
 
+int checkPresenceOfOption(char option[], char* options[]) {
+
+    int i=0;
+
+    while(*options[i] != '\0') {
+        if(strcmp(options[i],option) == 0) {
+            return true;
+        }
+        i++;
+    }
+    return false;
+}
+
 
 void printUsage(char *argv[]) {
   fprintf(stderr, "Usage: %s -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]\n", argv[0]);
@@ -107,28 +120,34 @@ void printDir(char *dirName) {
 }
 
 //Lista os Ficheiros Regulares (para ja)
-int list_contents(char *dirName) {
+int list_contents(char *dirName, char *options[]) {
   struct dirent *dentry;
   struct stat stat_entry;
   DIR *dir;
 
-  dir = opendir(dirName);
+  if((dir = opendir(dirName)) == NULL) {
+      perror("Directory Error");
+  }
 
   chdir(dirName);
   fprintf(stderr, "Files of ");
   printDir(dirName);
 
-  while((dentry = readdir(dir)) != NULL) {
-    stat(dentry->d_name, &stat_entry);
-    if (S_ISREG(stat_entry.st_mode)) {
-      printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
+    while((dentry = readdir(dir)) != NULL) {
+        lstat(dentry->d_name, &stat_entry); //com stat o symbolic link sem opçao -L era imprimido, nao sei a razão
+        if (S_ISREG(stat_entry.st_mode)) {
+            printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
+        }
+        if(S_ISLNK(stat_entry.st_mode)) { //Fazer assim nao sei se e melhor opçao(a unica que eu vi)
+            if(checkPresenceOfOption("L", options) 
+                || checkPresenceOfOption("deference", options)) {
+                printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
+            }
+        }
     }
-  }
-
-  return 0;
+    return 0;
 }
-
-
+    
 int main(int argc, char *argv[], char *envp[]) {
 
     char dirName[100], *options[8], maxDepth[15], blockSize[15], bSize[15], aux[3], forNow[15];
@@ -192,7 +211,6 @@ int main(int argc, char *argv[], char *envp[]) {
         }
        
     }
-    printf("%d\n", j);
     for (int i = 0; i < argc - 3; i++) { //So para questoes de teste
         printf("%s-->%d\n", options[i], i);
     }
@@ -203,7 +221,7 @@ int main(int argc, char *argv[], char *envp[]) {
     }
     
 
-    list_contents(dirName);
+    list_contents(dirName, options);
 
     return 0;
 }
