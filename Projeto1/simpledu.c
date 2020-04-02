@@ -134,15 +134,17 @@ int list_contents(char *dirName, char *options[]) {
   printDir(dirName);
 
     while((dentry = readdir(dir)) != NULL) {
-        lstat(dentry->d_name, &stat_entry); //com stat o symbolic link sem opçao -L era imprimido, nao sei a razão
+        if(checkPresenceOfOption("L", options) 
+            || checkPresenceOfOption("deference", options)) {
+            stat(dentry->d_name, &stat_entry);
+        }else {
+            lstat(dentry->d_name, &stat_entry);
+        }
         if (S_ISREG(stat_entry.st_mode)) {
             printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
         }
         if(S_ISLNK(stat_entry.st_mode)) { //Fazer assim nao sei se e melhor opçao(a unica que eu vi)
-            if(checkPresenceOfOption("L", options) 
-                || checkPresenceOfOption("deference", options)) {
-                printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
-            }
+            printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
         }
     }
     return 0;
