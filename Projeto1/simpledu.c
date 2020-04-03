@@ -34,7 +34,6 @@ void  makeOptinsDiff(char *option, char *specialOption, char *check) {
     specialOption[l] = '\0';
     l = 0;
     while(option[l+2] != '\0' && option[l+2] != '=') {
-        printf("%c", option[l+2]);
         check[l] = option[l+2];
         l++;
     }
