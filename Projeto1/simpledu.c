@@ -23,20 +23,25 @@ int validOption(char *option) {
     return false;
 }
 
-char*  makeOptinsDiff(char *option, char *specialOption) {
+void  makeOptinsDiff(char *option, char *specialOption, char *check) {
 
     int l = 0;
     
-    while (option[l+2] != '='){
+    while (option[l+2] != '\0'){
         specialOption[l] = option[l+2];
         l++;
     }
     specialOption[l] = '\0';
-    
-    return specialOption;
+    l = 0;
+    while(option[l+2] != '\0' && option[l+2] != '=') {
+        printf("%c", option[l+2]);
+        check[l] = option[l+2];
+        l++;
+    }
+    check[l] = '\0';
 }
 
-char* buildOption(char *argv, char *option, char * aux) {
+void buildOption(char *argv, char *option, char *aux) {
 
     int l=0;
 
@@ -49,8 +54,6 @@ char* buildOption(char *argv, char *option, char * aux) {
     aux[0] = option[0];
     aux[1] = option[1];
     aux[2] = '\0';
-	
-	return option;
 }
 
 void sort(char *options[], int size) {
@@ -135,7 +138,7 @@ int list_contents(char *dirName, char *options[]) {
 
     while((dentry = readdir(dir)) != NULL) {
         if(checkPresenceOfOption("L", options) 
-            || checkPresenceOfOption("deference", options)) {
+            || checkPresenceOfOption("dereference", options)) {
             stat(dentry->d_name, &stat_entry);
         }else {
             lstat(dentry->d_name, &stat_entry);
@@ -152,7 +155,7 @@ int list_contents(char *dirName, char *options[]) {
     
 int main(int argc, char *argv[], char *envp[]) {
 
-    char dirName[100], *options[8], maxDepth[15], blockSize[15], bSize[15], aux[3], forNow[15];
+    char dirName[100], *options[8], maxDepth[15], blockSize[15], bSize[15], forCheck[25];
     int j = 0, l = 0;
 
     
@@ -176,14 +179,14 @@ int main(int argc, char *argv[], char *envp[]) {
         }
         if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
             if(argv[i][1] == 'B') {
-                strcpy(options[j],buildOption(argv[i], forNow, aux));
-                if(!validOption(aux)){
+                buildOption(argv[i], options[j], forCheck);
+                if(!validOption(forCheck)){
                     invalidOption(argv, argv[i], 1);
                 }
             }
             else {
-                strcpy(options[j], buildOption(argv[i], forNow, aux));
-                if(!validOption(options[j])){
+                buildOption(argv[i], options[j], forCheck);
+                if(!validOption(forCheck)){
                     invalidOption(argv, argv[i], 2);
                 }
             }
@@ -191,21 +194,20 @@ int main(int argc, char *argv[], char *envp[]) {
         }
         else if (argv[i][0] == '-' && argv[i][1] == '-'){ //temporario ate arranjar soluçao melhor
             if (argv[i][2] == 'm') { //Adiciona ao options max-depth
-            strcpy(options[j], makeOptinsDiff(argv[i], maxDepth));
-                printf("%s\n", options[j]);
-                if (!validOption(maxDepth)) {
+                makeOptinsDiff(argv[i], options[j], forCheck);
+                if (!validOption(forCheck)) {
                     invalidOption(argv, argv[i], 3);
                 }
             }
             else if (argv[i][2] == 'b') { //Adiciona ao options block-size
-                strcpy(options[j],makeOptinsDiff(argv[i], blockSize));
-                if (!validOption(blockSize)) {
+                makeOptinsDiff(argv[i], options[j],forCheck);
+                if (!validOption(forCheck)) {
                     invalidOption(argv, argv[i], 4);
                 }
             }
             else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
-                strcpy(options[j],makeOptinsDiff(argv[i], options[j]));
-                if (!validOption(options[j])) {
+                makeOptinsDiff(argv[i], options[j], forCheck);
+                if (!validOption(forCheck)) {
                     invalidOption(argv, argv[i], 5);
                 }
             }
