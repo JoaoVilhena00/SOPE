@@ -47,31 +47,27 @@ int list_contents(char *dirName, char *options[]) {
   printDir(dirName);
 
     while((dentry = readdir(dir)) != NULL) {
-
-        if((checkPresenceOfOption("L", options) 
-            || checkPresenceOfOption("dereference", options)) && (checkPresenceOfOption("a", options) 
-            || checkPresenceOfOption("all", options))) {
-            stat(dentry->d_name, &stat_entry);
-            if (S_ISREG(stat_entry.st_mode)) {
-                printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
-            }
-        }else {
+        
+        if(checkPresenceOfOption("L", options) 
+            || checkPresenceOfOption("dereference", options)) {
             lstat(dentry->d_name, &stat_entry);
+        }else {
+            stat(dentry->d_name, &stat_entry);
+        }
+
+        if(checkPresenceOfOption("a", options) || checkPresenceOfOption("all",options)) {
             if (S_ISREG(stat_entry.st_mode)) {
                 printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
             }
             if(S_ISLNK(stat_entry.st_mode)) { //Fazer assim nao sei se e melhor opçao(a unica que eu vi)
                 printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
             }
-        }
-        if(!(checkPresenceOfOption("a", options) || checkPresenceOfOption("all", options))) {
+        }else { //Isto nao esta bem era suposto imprimir um subdiretorio e imprimi o diretorio passado varias vezes
             if(S_ISDIR(stat_entry.st_mode)) {
-                printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
+                printf("%d\t%s\n", (int)stat_entry.st_size, dirName);
+
             }
         }
-        
-        
-        
     }
     return 0;
 }

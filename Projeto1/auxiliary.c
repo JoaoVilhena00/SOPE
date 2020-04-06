@@ -9,10 +9,9 @@
 int validOption(char *option) {
 
     if (!strcmp(option, "a") || !strcmp(option, "b") || !strcmp(option, "B ")
-        || !strcmp(option, "L") || !strcmp(option, "S") || !strcmp(option, "max-depth")
-        || !strcmp(option, "block-size") || !strcmp(option, "all") || !strcmp(option, "bytes")
-        || !strcmp(option, "dereference")
-        || !strcmp(option, "separate-dirs")) {
+        || !strcmp(option, "L") || !strcmp(option, "S") || !strcmp(option, "--max-depth")
+        || !strcmp(option, "--block-size") || !strcmp(option, "--all") || !strcmp(option, "--bytes")
+        || !strcmp(option, "--dereference") || !strcmp(option, "--separate-dirs")) {
         return true;
     }
     return false;
@@ -28,8 +27,8 @@ void  makeOptinsDiff(char *option, char *specialOption, char *check) {
     }
     specialOption[l] = '\0';
     l = 0;
-    while(option[l+2] != '\0' && option[l+2] != '=') {
-        check[l] = option[l+2];
+    while(option[l] != '\0' && option[l] != '=') {
+        check[l] = option[l];
         l++;
     }
     check[l] = '\0';
