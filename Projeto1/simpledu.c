@@ -7,99 +7,10 @@
 #include <dirent.h>
 #include <errno.h>
 #include <ctype.h>
+#include "auxiliary.h"
 
 #define true 1
 #define false 0
-
-int validOption(char *option) {
-
-    if (!strcmp(option, "a") || !strcmp(option, "b") || !strcmp(option, "B ")
-        || !strcmp(option, "L") || !strcmp(option, "S") || !strcmp(option, "max-depth")
-        || !strcmp(option, "block-size") || !strcmp(option, "all") || !strcmp(option, "bytes")
-        || !strcmp(option, "dereference")
-        || !strcmp(option, "separate-dirs")) {
-        return true;
-    }
-    return false;
-}
-
-void  makeOptinsDiff(char *option, char *specialOption, char *check) {
-
-    int l = 0;
-    
-    while (option[l+2] != '\0'){
-        specialOption[l] = option[l+2];
-        l++;
-    }
-    specialOption[l] = '\0';
-    l = 0;
-    while(option[l+2] != '\0' && option[l+2] != '=') {
-        check[l] = option[l+2];
-        l++;
-    }
-    check[l] = '\0';
-}
-
-void buildOption(char *argv, char *option, char *aux) {
-
-    int l=0;
-
-    while(argv[l+1] != '\0') {
-        option[l] = argv[l+1];
-        l++;
-    }
-    option[l] = '\0';
-    
-    aux[0] = option[0];
-    aux[1] = option[1];
-    aux[2] = '\0';
-}
-
-void sort(char *options[], int size) {
-
-    char aux[15];
-
-    for(int i=0; i<size; i++) {
-        for(int j=i+1; j<size; j++) {
-            if(strcmp(options[i],options[j]) > 0) {
-                strcpy(aux,options[i]);
-                strcpy(options[i], options[j]);
-                strcpy(options[j], aux);
-            }
-        }
-    }
-    
-}
-
-int checkRepeatedElements(char* options[], int size) {
-    
-    char last[15];
-    
-    sort(options, size);
-
-    for(int i=0; i<size; i++) {
-        if(strcmp(options[i], last) != 0) {
-            strcpy(last, options[i]);
-        }else {
-            return true;
-        }
-    }
-    return false;
-}
-
-int checkPresenceOfOption(char option[], char* options[]) {
-
-    int i=0;
-
-    while(*options[i] != '\0') {
-        if(strcmp(options[i],option) == 0) {
-            return true;
-        }
-        i++;
-    }
-    return false;
-}
-
 
 void printUsage(char *argv[]) {
   fprintf(stderr, "Usage: %s -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]\n", argv[0]);
@@ -136,18 +47,31 @@ int list_contents(char *dirName, char *options[]) {
   printDir(dirName);
 
     while((dentry = readdir(dir)) != NULL) {
-        if(checkPresenceOfOption("L", options) 
-            || checkPresenceOfOption("dereference", options)) {
+
+        if((checkPresenceOfOption("L", options) 
+            || checkPresenceOfOption("dereference", options)) && (checkPresenceOfOption("a", options) 
+            || checkPresenceOfOption("all", options))) {
             stat(dentry->d_name, &stat_entry);
+            if (S_ISREG(stat_entry.st_mode)) {
+                printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
+            }
         }else {
             lstat(dentry->d_name, &stat_entry);
+            if (S_ISREG(stat_entry.st_mode)) {
+                printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
+            }
+            if(S_ISLNK(stat_entry.st_mode)) { //Fazer assim nao sei se e melhor opçao(a unica que eu vi)
+                printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
+            }
         }
-        if (S_ISREG(stat_entry.st_mode)) {
-            printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
+        if(!(checkPresenceOfOption("a", options) || checkPresenceOfOption("all", options))) {
+            if(S_ISDIR(stat_entry.st_mode)) {
+                printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
+            }
         }
-        if(S_ISLNK(stat_entry.st_mode)) { //Fazer assim nao sei se e melhor opçao(a unica que eu vi)
-            printf("%d\t%s/%-25s\n", (int)stat_entry.st_size, dirName, dentry->d_name);
-        }
+        
+        
+        
     }
     return 0;
 }
@@ -157,13 +81,10 @@ int main(int argc, char *argv[], char *envp[]) {
     char dirName[100], *options[8], maxDepth[15], blockSize[15], bSize[15], forCheck[25];
     int j = 0, l = 0;
 
-    
     for(int i=0; i<8; i++) {
         *(options+i) = (char*) malloc(15*sizeof(char));
     }
     
-
-
     if (argc < 2 || (strcmp(argv[1], "-l") && strcmp(argv[1], "--cout-links"))) { //Verifica se o utilizador degita a opçao -l
         invalidArgs(argv);
     }
@@ -223,9 +144,7 @@ int main(int argc, char *argv[], char *envp[]) {
         exit(6);
     }
     
-
     list_contents(dirName, options);
 
     return 0;
 }
-
