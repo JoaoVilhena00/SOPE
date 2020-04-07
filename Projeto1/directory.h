@@ -16,7 +16,7 @@
 
 void printDir(char *dirName);
 void listContentsPrint(char *dirName, struct dirent *dentry, struct stat stat_entry, int hasb, int b_size);
-int list_contents(char *dirName, char *options[], int b_size);
+int list_contents(char *dirName, char *options[], int b_size, int m_depth);
 
 
 #endif // DIRECTORY_H_

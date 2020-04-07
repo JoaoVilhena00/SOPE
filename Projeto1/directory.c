@@ -20,7 +20,7 @@ void listContentsPrint(char *dirName, struct dirent *dentry, struct stat stat_en
 }
 
 //Lista os Ficheiros Regulares (para ja)
-int list_contents(char *dirName, char *options[], int b_size) {
+int list_contents(char *dirName, char *options[], int b_size, int m_depth) {
   struct dirent *dentry;
   struct stat stat_entry;
   DIR *dir;
