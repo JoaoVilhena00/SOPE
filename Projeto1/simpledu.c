@@ -15,11 +15,11 @@
 
 int main(int argc, char *argv[], char *envp[]) {
 
-    char dirName[100], *options[8], maxDepth[15], blockSize[15], bSize[15], forCheck[25];
+    char dirName[100], *options[8], bSize[15], forCheck[25];
     int j = 0, l = 0;
-    int b_size = -1;
+    int b_size = -1, m_depth;
     long conv;
-    char *p;
+    char *p, *key;
 
     for(int i=0; i<8; i++) {
         *(options+i) = (char*) malloc(15*sizeof(char));
@@ -33,6 +33,7 @@ int main(int argc, char *argv[], char *envp[]) {
         //em desenvolvimento
     }
     for (int i = 2; i < argc; i++){
+        printf("%s\n", argv[i]);
         if (argv[i][0] != '-'){ // Adiciona o diretorio introduzido pelo utilizador a variavel dirName
             strcpy(dirName, argv[i]);
             continue;
@@ -44,8 +45,8 @@ int main(int argc, char *argv[], char *envp[]) {
                     invalidOption(argv, argv[i], 1);
                 }
                 i++;
-                if(argc-1 < i) {
-                  invalidBArg(argv, NULL);
+                if(argc < i) {
+                  return -1;
                 } else if ((conv = strtol(argv[i], &p, 10)) == 0) {
                   invalidBArg(argv, argv[i]);
                 }
@@ -65,12 +66,17 @@ int main(int argc, char *argv[], char *envp[]) {
                 if (!validOption(forCheck)) {
                     invalidOption(argv, argv[i], 3);
                 }
+                key = strtok(argv[i],"=");
+                m_depth = atoi(strtok(NULL,"="));  
             }
             else if (argv[i][2] == 'b') { //Adiciona ao options block-size
                 makeOptinsDiff(argv[i], options[j],forCheck);
                 if (!validOption(forCheck)) {
                     invalidOption(argv, argv[i], 4);
                 }
+                key = strtok(argv[i],"=");
+                b_size = atoi(strtok(NULL,"="));
+                printf("%d\n",b_size);
             }
             else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
                 makeOptinsDiff(argv[i], options[j], forCheck);
@@ -82,10 +88,6 @@ int main(int argc, char *argv[], char *envp[]) {
         }
 
     }
-
-    /*for (int i = 0; i < argc - 3; i++) { //So para questoes de teste
-        printf("%s-->%d\n", options[i], i);
-    }*/
 
     if (b_size == -1) {
       if(checkRepeatedElements(options, argc-3) == true) {
@@ -99,7 +101,7 @@ int main(int argc, char *argv[], char *envp[]) {
       }
     }
 
-    list_contents(dirName, options, b_size);
+    list_contents(dirName, options, b_size, m_depth);
 
     return 0;
 }
