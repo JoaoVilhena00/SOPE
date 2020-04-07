@@ -53,6 +53,7 @@ int main(int argc, char *argv[], char *envp[]) {
     for (int i = 2; i < argc; i++){
         if (argv[i][0] != '-'){ // Adiciona o diretorio introduzido pelo utilizador a variavel dirName
             strcpy(dirName, argv[i]);
+            continue;
         }
         if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
             if(argv[i][1] == 'B') {
