@@ -1,6 +1,8 @@
 #ifndef DIRECTORY_H_
 #define DIRECTORY_H_
 
+#define DEV_BSIZE 512
+
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -12,10 +14,9 @@
 #define true 1
 #define false 0
 
-void listContentsPrint(char *dirName, struct dirent *dentry, struct stat stat_entry, int hasb);
-int list_contents(char *dirName, char *options[]);
+void printDir(char *dirName);
+void listContentsPrint(char *dirName, struct dirent *dentry, struct stat stat_entry, int hasb, int b_size);
+int list_contents(char *dirName, char *options[], int b_size);
 
 
 #endif // DIRECTORY_H_
-
-

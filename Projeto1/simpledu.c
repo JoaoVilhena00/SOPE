@@ -13,31 +13,13 @@
 #define true 1
 #define false 0
 
-void printUsage(char *argv[]) {
-  fprintf(stderr, "Usage: %s -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]\n", argv[0]);
-}
-
-void invalidArgs(char *argv[]) {
-  fprintf(stderr, "Invalid Arguments!\n");
-  printUsage(argv);
-  exit(1);
-}
-
-void invalidOption(char *argv[], char *option, int r) {
-  fprintf(stderr, "%s is not a valid option!\n", option);
-  printUsage(argv);
-  exit(r);
-}
-
-void printDir(char *dirName) {
-  fprintf(stderr, "Directory: ./%s\n", dirName);
-}
-
-
 int main(int argc, char *argv[], char *envp[]) {
 
     char dirName[100], *options[8], maxDepth[15], blockSize[15], bSize[15], forCheck[25];
     int j = 0, l = 0;
+    int b_size = -1;
+    long conv;
+    char *p;
 
     for(int i=0; i<8; i++) {
         *(options+i) = (char*) malloc(15*sizeof(char));
@@ -51,16 +33,24 @@ int main(int argc, char *argv[], char *envp[]) {
         //em desenvolvimento
     }
     for (int i = 2; i < argc; i++){
+        printf("%s\n", argv[i]);
         if (argv[i][0] != '-'){ // Adiciona o diretorio introduzido pelo utilizador a variavel dirName
             strcpy(dirName, argv[i]);
             continue;
         }
-        if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
+        else if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
             if(argv[i][1] == 'B') {
                 buildOption(argv[i], options[j], forCheck);
                 if(!validOption(forCheck)){
                     invalidOption(argv, argv[i], 1);
                 }
+                i++;
+                if(argc < i) {
+                  return -1;
+                } else if ((conv = strtol(argv[i], &p, 10)) == 0) {
+                  invalidBArg(argv, argv[i]);
+                }
+                b_size = (int) conv;
             }
             else {
                 buildOption(argv[i], options[j], forCheck);
@@ -93,16 +83,24 @@ int main(int argc, char *argv[], char *envp[]) {
         }
 
     }
+
     /*for (int i = 0; i < argc - 3; i++) { //So para questoes de teste
         printf("%s-->%d\n", options[i], i);
     }*/
 
-    if(checkRepeatedElements(options, argc-3) == true) {
-        printf("There is repeated elements\n");
-        exit(6);
+    if (b_size == -1) {
+      if(checkRepeatedElements(options, argc-3) == true) {
+          printf("There is repeated elements\n");
+          exit(6);
+      }
+    } else {
+      if(checkRepeatedElements(options, argc-4) == true) {
+          printf("There is repeated elements\n");
+          exit(6);
+      }
     }
 
-    list_contents(dirName, options);
+    list_contents(dirName, options, b_size);
 
     return 0;
 }
