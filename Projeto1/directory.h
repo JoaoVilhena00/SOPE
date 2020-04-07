@@ -16,6 +16,6 @@ void listContentsPrint(char *dirName, struct dirent *dentry, struct stat stat_en
 int list_contents(char *dirName, char *options[]);
 
 
-#endif // DIRECTORIES_H_
+#endif // DIRECTORY_H_
 
 
