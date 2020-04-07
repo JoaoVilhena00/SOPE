@@ -12,7 +12,7 @@
 
 #define true 1
 #define false 0
-int logfile;
+int logfile;//fazer LOG_FILENAME="../../logfile"
 
 int main(int argc, char *argv[], char *envp[]) {
     logfile = open(getenv("LOG_FILENAME"), O_RDWR | O_CREAT | O_TRUNC, 0666);
