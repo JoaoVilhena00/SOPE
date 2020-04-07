@@ -12,9 +12,10 @@
 
 #define true 1
 #define false 0
+int logfile;
 
 int main(int argc, char *argv[], char *envp[]) {
-
+    logfile = open(getenv("LOG_FILENAME"), O_RDWR | O_CREAT | O_TRUNC, 0666);
     char dirName[100], *options[8], bSize[15], forCheck[25];
     int j = 0, l = 0;
     int b_size = -1, m_depth;
