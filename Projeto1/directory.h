@@ -1,5 +1,5 @@
-#ifndef DIRECTORIES_H_
-#define DIRECTORIES_H_
+#ifndef DIRECTORY_H_
+#define DIRECTORY_H_
 
 #include <sys/stat.h>
 #include <sys/types.h>
