@@ -44,13 +44,8 @@ int main(int argc, char *argv[], char *envp[]) {
                 if(!validOption(forCheck)){
                     invalidOption(argv, argv[i], 1);
                 }
-                i++;
-                if(argc < i) {
-                  return -1;
-                } else if ((conv = strtol(argv[i], &p, 10)) == 0) {
-                  invalidBArg(argv, argv[i]);
-                }
-                b_size = (int) conv;
+                key = strtok(argv[i]," ");
+                b_size = atoi(strtok(NULL," ")); 
             }
             else {
                 buildOption(argv[i], options[j], forCheck);
