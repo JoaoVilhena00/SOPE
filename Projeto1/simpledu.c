@@ -33,7 +33,6 @@ int main(int argc, char *argv[], char *envp[]) {
         //em desenvolvimento
     }
     for (int i = 2; i < argc; i++){
-        printf("%s\n", argv[i]);
         if (argv[i][0] != '-'){ // Adiciona o diretorio introduzido pelo utilizador a variavel dirName
             strcpy(dirName, argv[i]);
             continue;
@@ -45,8 +44,8 @@ int main(int argc, char *argv[], char *envp[]) {
                     invalidOption(argv, argv[i], 1);
                 }
                 i++;
-                if(argc < i) {
-                  return -1;
+                if(argc-1 < i) {
+                  invalidBArg(argv, NULL);
                 } else if ((conv = strtol(argv[i], &p, 10)) == 0) {
                   invalidBArg(argv, argv[i]);
                 }
