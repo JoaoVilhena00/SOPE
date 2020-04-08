@@ -18,7 +18,7 @@ int logfile;//fazer LOG_FILENAME="../../logfile"
 int main(int argc, char *argv[], char *envp[]) {
     logfile = open(getenv("LOG_FILENAME"), O_RDWR | O_CREAT | O_TRUNC, 0666);
     char dirName[100], *options[8], forCheck[25];
-    int j = 0, l = 0;
+    int j = 0, l = 0, aux;
     int b_size = -1, m_depth = -1;
     long conv;
     char *key, *p;
@@ -32,7 +32,7 @@ int main(int argc, char *argv[], char *envp[]) {
     }
 
     for (int i = 2; i < argc; i++){
-        //printf("%s\n", argv[i]);
+        printf("%s\n", argv[i]);
         if (argv[i][0] != '-'){ // Adiciona o diretorio introduzido pelo utilizador a variavel dirName
             strcpy(dirName, argv[i]);
             continue;
@@ -43,13 +43,11 @@ int main(int argc, char *argv[], char *envp[]) {
                 if(!validOption(forCheck)){
                     invalidOption(argv, argv[i], 1);
                 }
-                i++;
-                if(argc < i) {
-                  return -1;
-                } else if ((conv = strtol(argv[i], &p, 10)) == 0) {
-                  invalidBArg(argv, argv[i]);
+                
+                key = strtok(argv[i]," ");
+                if((m_depth = atoi(strtok(NULL," "))) == 0) {
+                    invalidOption(argv, argv[i], 1);
                 }
-                b_size = (int) conv;
             }
             else {
                 buildOption(argv[i], options[j], forCheck);
