@@ -10,6 +10,10 @@
 #include <fcntl.h>
 #include "auxiliary.h"
 #include "directory.h"
+#include <time.h>
+#include <wait.h>
+#include <signal.h>
+#include <limits.h>
 
 #define true 1
 #define false 0
