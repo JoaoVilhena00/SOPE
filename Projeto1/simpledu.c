@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <errno.h>
-#include <ctype.h
+#include <ctype.h>
 #include <fcntl.h>
 #include "auxiliary.h"
 #include "directory.h"
