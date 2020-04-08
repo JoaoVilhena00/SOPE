@@ -15,7 +15,7 @@ void listContentsPrint(char *dirName, struct dirent *dentry, struct stat stat_en
       stat_entry.st_blksize = b_size;
         printf("%d\t%s/%-25s\n", (int)(stat_entry.st_blocks * DEV_BSIZE / b_size), dirName, dentry->d_name);
     } else {
-        printf("%d\t%s/%-25s\n", (int)stat_entry.st_blocks, dirName, dentry->d_name);
+        printf("%d\t%s/%-25s\n", (int)stat_entry.st_blocks / 2, dirName, dentry->d_name);
     }
 }
 
@@ -27,7 +27,6 @@ int list_contents(char *dirName, char *options[], int b_size, int m_depth) {
   int main_dir_size = 0;
   int hasb;
 
-  printDir(dirName);
   if((dir = opendir(dirName)) == NULL) {
       perror("Directory Error");
   }
@@ -42,12 +41,11 @@ int list_contents(char *dirName, char *options[], int b_size, int m_depth) {
             hasb = false;
         }
 
-        if (strcmp(dentry->d_name, ".") == 0){
-            if(hasb == true)
-                main_dir_size = (int)stat_entry.st_size;
-            else
-                main_dir_size = (int)stat_entry.st_blocks;
-        }
+        if(hasb == true && strcmp(dentry->d_name, dirName)) {
+          main_dir_size += (int)stat_entry.st_size;
+        } else if(hasb == false)
+            main_dir_size += (int)stat_entry.st_blocks / 2;
+
         if((checkPresenceOfOption("L", options)
             || checkPresenceOfOption("dereference", options)) && (checkPresenceOfOption("a", options)
             || checkPresenceOfOption("all", options))) {
