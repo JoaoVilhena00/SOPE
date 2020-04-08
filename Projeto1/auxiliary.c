@@ -24,13 +24,13 @@ void invalidOption(char *argv[], char *option, int r) {
 
 int validOption(char *option) {
 
-    if (!strcmp(option, "a") || !strcmp(option, "b") || !strcmp(option, "B ")
+    if (!strcmp(option, "a") || !strcmp(option, "b") || !strcmp(option, "B")
         || !strcmp(option, "L") || !strcmp(option, "S") || !strcmp(option, "--max-depth")
         || !strcmp(option, "--block-size") || !strcmp(option, "--all") || !strcmp(option, "--bytes")
         || !strcmp(option, "--dereference") || !strcmp(option, "--separate-dirs")) {
         return true;
     }
-    
+
     return false;
 }
 

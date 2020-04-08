@@ -43,10 +43,11 @@ int list_contents(char *dirName, char *options[], int b_size, int m_depth) {
         }
 
         if (strcmp(dentry->d_name, ".") == 0){
-            if(hasb == true)
-                main_dir_size = (int)stat_entry.st_size;
-            else
-                main_dir_size = (int)stat_entry.st_blocks;
+
+        }
+
+        if(!S_ISDIR(stat_entry.st_mode)) {
+
         }
 
         if((checkPresenceOfOption("L", options)

@@ -36,22 +36,24 @@ int main(int argc, char *argv[], char *envp[]) {
     }
 
     for (int i = 2; i < argc; i++){
-        printf("%s\n", argv[i]);
         if (argv[i][0] != '-'){ // Adiciona o diretorio introduzido pelo utilizador a variavel dirName
             strcpy(dirName, argv[i]);
             continue;
         }
         else if (argv[i][0] == '-' && argv[i][1] != '-'){ //Adiciona ao options as opçoes do tipo -(nome)
             if(argv[i][1] == 'B') {
+                printf("j: %d\n", j);
                 buildOption(argv[i], options[j], forCheck);
                 if(!validOption(forCheck)){
                     invalidOption(argv, argv[i], 1);
                 }
-                
-                key = strtok(argv[i]," ");
-                if((m_depth = atoi(strtok(NULL," "))) == 0) {
-                    invalidOption(argv, argv[i], 1);
+                i++;
+                if(argc-1 < i) {
+                  invalidBArg(argv, NULL);
+                } else if ((conv = strtol(argv[i], &p, 10)) == 0) {
+                  invalidBArg(argv, argv[i]);
                 }
+                b_size = (int) conv;
             }
             else {
                 buildOption(argv[i], options[j], forCheck);
@@ -71,7 +73,7 @@ int main(int argc, char *argv[], char *envp[]) {
                 if((b_size = atoi(strtok(NULL,"="))) == 0) {
                     invalidOption(argv, argv[i], 3);
                 }
-            }  
+            }
             else if (argv[i][2] == 'b') { //Adiciona ao options block-size
                 makeOptinsDiff(argv[i], options[j],forCheck);
                 if (!validOption(forCheck)) {
@@ -89,10 +91,11 @@ int main(int argc, char *argv[], char *envp[]) {
                 }
             }
             j++;
-        }else 
-            invalidOption(argv,argv[i], 6); j++;
-        
-    
+        } else {
+          invalidOption(argv,argv[i], 6);
+          j++;
+        }
+
     }
 
     if (b_size == -1) {
@@ -106,8 +109,6 @@ int main(int argc, char *argv[], char *envp[]) {
           exit(6);
       }
     }
-    
-    printf("%d\n",b_size);
 
     list_contents(dirName, options, b_size, m_depth);
 
