@@ -64,7 +64,7 @@ int main(int argc, char *argv[], char *envp[]) {
                     invalidOption(argv, argv[i], 3);
                 }
                 key = strtok(argv[i],"=");
-                if((m_depth = atoi(strtok(NULL,"="))) == 0) {
+                if((b_size = atoi(strtok(NULL,"="))) == 0) {
                     invalidOption(argv, argv[i], 3);
                 }
             }  
