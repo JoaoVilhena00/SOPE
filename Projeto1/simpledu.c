@@ -17,25 +17,22 @@ int logfile;//fazer LOG_FILENAME="../../logfile"
 
 int main(int argc, char *argv[], char *envp[]) {
     logfile = open(getenv("LOG_FILENAME"), O_RDWR | O_CREAT | O_TRUNC, 0666);
-    char dirName[100], *options[8], bSize[15], forCheck[25];
+    char dirName[100], *options[8], forCheck[25];
     int j = 0, l = 0;
-    int b_size = -1, m_depth;
+    int b_size = -1, m_depth = -1;
     long conv;
-    char *p, *key;
+    char *key, *p;
 
     for(int i=0; i<8; i++) {
         *(options+i) = (char*) malloc(15*sizeof(char));
     }
 
-    if (argc < 2 || (strcmp(argv[1], "-l") && strcmp(argv[1], "--cout-links"))) { //Verifica se o utilizador degita a opçao -l
+    if (argc < 2 || (strcmp(argv[1], "-l") && strcmp(argv[1], "--count-links"))) { //Verifica se o utilizador degita a opçao -l
         invalidArgs(argv);
     }
 
-    if (argc == 2){
-        //em desenvolvimento
-    }
     for (int i = 2; i < argc; i++){
-        printf("%s\n", argv[i]);
+        //printf("%s\n", argv[i]);
         if (argv[i][0] != '-'){ // Adiciona o diretorio introduzido pelo utilizador a variavel dirName
             strcpy(dirName, argv[i]);
             continue;
@@ -46,8 +43,13 @@ int main(int argc, char *argv[], char *envp[]) {
                 if(!validOption(forCheck)){
                     invalidOption(argv, argv[i], 1);
                 }
-                key = strtok(argv[i]," ");
-                b_size = atoi(strtok(NULL," ")); 
+                i++;
+                if(argc < i) {
+                  return -1;
+                } else if ((conv = strtol(argv[i], &p, 10)) == 0) {
+                  invalidBArg(argv, argv[i]);
+                }
+                b_size = (int) conv;
             }
             else {
                 buildOption(argv[i], options[j], forCheck);
@@ -64,16 +66,19 @@ int main(int argc, char *argv[], char *envp[]) {
                     invalidOption(argv, argv[i], 3);
                 }
                 key = strtok(argv[i],"=");
-                m_depth = atoi(strtok(NULL,"="));  
-            }
+                if((m_depth = atoi(strtok(NULL,"="))) == 0) {
+                    invalidOption(argv, argv[i], 3);
+                }
+            }  
             else if (argv[i][2] == 'b') { //Adiciona ao options block-size
                 makeOptinsDiff(argv[i], options[j],forCheck);
                 if (!validOption(forCheck)) {
                     invalidOption(argv, argv[i], 4);
                 }
                 key = strtok(argv[i],"=");
-                b_size = atoi(strtok(NULL,"="));
-                printf("%d\n",b_size);
+                if((b_size = atoi(strtok(NULL,"="))) == 0) {
+                    invalidOption(argv, argv[i], 4);
+                }
             }
             else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
                 makeOptinsDiff(argv[i], options[j], forCheck);
@@ -82,8 +87,10 @@ int main(int argc, char *argv[], char *envp[]) {
                 }
             }
             j++;
-        }
-
+        }else 
+            invalidOption(argv,argv[i], 6); j++;
+        
+    
     }
 
     if (b_size == -1) {
@@ -97,6 +104,8 @@ int main(int argc, char *argv[], char *envp[]) {
           exit(6);
       }
     }
+    
+    printf("%d\n",b_size);
 
     list_contents(dirName, options, b_size, m_depth);
 
