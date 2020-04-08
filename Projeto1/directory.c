@@ -53,6 +53,7 @@ int list_contents(char *dirName, char *options[], int b_size, int m_depth) {
         if((checkPresenceOfOption("L", options)
             || checkPresenceOfOption("dereference", options)) && (checkPresenceOfOption("a", options)
             || checkPresenceOfOption("all", options))) {
+            lstat(dentry->d_name, &stat_entry);
             if (S_ISREG(stat_entry.st_mode)) {
               listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
             } else if (S_ISDIR(stat_entry.st_mode)) {
