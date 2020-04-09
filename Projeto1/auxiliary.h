@@ -3,9 +3,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
+#include <wait.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <limits.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #define true 1
 #define false 0
+
+extern struct timespec beginning;
+
+
+double time_interval();
 
 void printUsage(char *argv[]);
 void invalidArgs(char *argv[]);
