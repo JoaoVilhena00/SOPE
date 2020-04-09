@@ -1,5 +1,12 @@
 #include "auxiliary.h"
 
+double time_interval() {
+  struct timespec ending;
+  
+  clock_gettime(CLOCK_MONOTONIC_RAW, &ending);
+  return (ending.tv_sec - beginning.tv_sec) * 1000.0 + (ending.tv_nsec - beginning.tv_nsec) / 1000000.0;
+}
+
 void printUsage(char *argv[]) {
   fprintf(stderr, "Usage: %s -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]\n", argv[0]);
 }
