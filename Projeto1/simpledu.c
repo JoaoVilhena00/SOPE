@@ -18,6 +18,7 @@
 #define true 1
 #define false 0
 int logfile;//fazer LOG_FILENAME="../../logfile"
+struct timespec beginning;//marks the time the program begins
 
 int main(int argc, char *argv[], char *envp[]) {
     logfile = open(getenv("LOG_FILENAME"), O_RDWR | O_CREAT | O_TRUNC, 0666);
@@ -26,6 +27,7 @@ int main(int argc, char *argv[], char *envp[]) {
     int b_size = -1, m_depth = -1;
     long conv;
     char *key, *p;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &beginning);
 
     for(int i=0; i<8; i++) {
         *(options+i) = (char*) malloc(15*sizeof(char));
