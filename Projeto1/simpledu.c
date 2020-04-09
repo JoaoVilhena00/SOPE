@@ -112,7 +112,7 @@ int main(int argc, char *argv[], char *envp[]) {
       }
     }
 
-    list_contents(dirName, options, b_size, m_depth);
+    list_contents(dirName, options, b_size, m_depth, argv, argc);
 
     return 0;
 }

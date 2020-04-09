@@ -20,12 +20,15 @@ void listContentsPrint(char *dirName, struct dirent *dentry, struct stat stat_en
 }
 
 //Lista os Ficheiros Regulares (para ja)
-int list_contents(char *dirName, char *options[], int b_size, int m_depth) {
+int list_contents(char *dirName, char *options[], int b_size, int m_depth, char *argv[], int argc) {
   struct dirent *dentry;
   struct stat stat_entry;
   DIR *dir;
   int main_dir_size = 0;
   int hasb;
+  char name[200];
+  pid_t pid, childpid;
+  int status;
 
   if((dir = opendir(dirName)) == NULL) {
       perror("Directory Error");
@@ -46,6 +49,21 @@ int list_contents(char *dirName, char *options[], int b_size, int m_depth) {
         } else if(hasb == false)
             main_dir_size += (int)stat_entry.st_blocks / 2;
 
+        if(S_ISDIR(stat_entry.st_mode) && strcmp(dentry->d_name,".") && strcmp(dentry->d_name,"..")) {
+          strcpy(name, dirName);
+          strcat(name, "/");
+          strcat(name, dentry->d_name);
+          strcpy(argv[2], name);
+          pid = fork();
+          if(pid != 0) {
+
+          } else {
+            execv(argv[0], argv);
+            childpid = wait(&status);
+          }
+        }
+
+
         if((checkPresenceOfOption("L", options)
             || checkPresenceOfOption("dereference", options)) && (checkPresenceOfOption("a", options)
             || checkPresenceOfOption("all", options))) {
@@ -59,7 +77,7 @@ int list_contents(char *dirName, char *options[], int b_size, int m_depth) {
             if (S_ISREG(stat_entry.st_mode)) {
               listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
             } else if (S_ISDIR(stat_entry.st_mode)) {
-              listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
+              // listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
             }else if(S_ISLNK(stat_entry.st_mode)) {
               listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
             }
