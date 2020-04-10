@@ -21,74 +21,81 @@ void listContentsPrint(char *dirName, struct dirent *dentry, struct stat stat_en
 
 //Lista os Ficheiros Regulares (para ja)
 int list_contents(char *dirName, char *options[], int b_size, int m_depth, char *argv[], int argc) {
-  struct dirent *dentry;
-  struct stat stat_entry;
-  DIR *dir;
-  int main_dir_size = 0;
-  int hasb;
-  char name[200];
-  pid_t pid, childpid;
-  int status;
+ struct dirent *dentry;
+ struct stat stat_entry;
+ DIR *dir;
+ int main_dir_size = 0;
+ int hasb;
+ char name[100];
+ pid_t pid, childpid;
+ int status;
+ char *args[8];
 
-  if((dir = opendir(dirName)) == NULL) {
-      perror("Directory Error");
-  }
+ for(int i = 0; i < argc; i++) {
+     *(args+i) = (char*) malloc(100*sizeof(char));
+ }
 
-  chdir(dirName);
+ for(int i = 0; i < argc; i++) {
+   strcpy(args[i], argv[i]);
+ }
 
-    while((dentry = readdir(dir)) != NULL) {
-        stat(dentry->d_name, &stat_entry);
-        if(checkPresenceOfOption("b",options) || checkPresenceOfOption("bytes",options)) {
-            hasb = true;
-        }else {
-            hasb = false;
-        }
+ if((dir = opendir(dirName)) == NULL) {
+     perror("Directory Error");
+ }
 
-        if(hasb == true && strcmp(dentry->d_name, dirName)) {
-          main_dir_size += (int)stat_entry.st_size;
-        } else if(hasb == false)
-            main_dir_size += (int)stat_entry.st_blocks / 2;
+ chdir(dirName);
 
-        if(S_ISDIR(stat_entry.st_mode) && strcmp(dentry->d_name,".") && strcmp(dentry->d_name,"..")) {
-          strcpy(name, dirName);
-          strcat(name, "/");
-          strcat(name, dentry->d_name);
-          strcpy(argv[2], name);
-          pid = fork();
-          if(pid != 0) {
+   while((dentry = readdir(dir)) != NULL) {
+       stat(dentry->d_name, &stat_entry);
+       if(checkPresenceOfOption("b",options) || checkPresenceOfOption("bytes",options)) {
+           hasb = true;
+       }else {
+           hasb = false;
+       }
 
-          } else {
-            execv(argv[0], argv);
-            childpid = wait(&status);
-          }
-        }
+       if(hasb == true && strcmp(dentry->d_name, dirName)) {
+         main_dir_size += (int)stat_entry.st_size;
+       } else if(hasb == false)
+           main_dir_size += (int)stat_entry.st_blocks / 2;
 
+       if(S_ISDIR(stat_entry.st_mode) && strcmp(dentry->d_name,".") && strcmp(dentry->d_name,"..")) {
+         strcpy(name, dirName);
+         strcat(name, "/");
+         strcat(name, dentry->d_name);
+         strcpy(args[2], name);
+         pid = fork();
+         if(pid > 0) {
+           childpid = wait(&status);
+         } else if(pid == 0) {
+           execv(args[0], &args[0]);
+         }
+       }
 
-        if((checkPresenceOfOption("L", options)
-            || checkPresenceOfOption("dereference", options)) && (checkPresenceOfOption("a", options)
-            || checkPresenceOfOption("all", options))) {
-            if (S_ISREG(stat_entry.st_mode)) {
-              listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
-            } else if (S_ISDIR(stat_entry.st_mode)) {
-              listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
-            }
-        } else if (checkPresenceOfOption("a", options) || checkPresenceOfOption("all", options)){
-            lstat(dentry->d_name, &stat_entry);
-            if (S_ISREG(stat_entry.st_mode)) {
-              listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
-            } else if (S_ISDIR(stat_entry.st_mode)) {
-              // listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
-            }else if(S_ISLNK(stat_entry.st_mode)) {
-              listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
-            }
-        } else {
-            if(S_ISDIR(stat_entry.st_mode)) {
-                listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
-            }
-        }
-    }
+       if((checkPresenceOfOption("L", options)
+           || checkPresenceOfOption("dereference", options)) && (checkPresenceOfOption("a", options)
+           || checkPresenceOfOption("all", options))) {
+           if (S_ISREG(stat_entry.st_mode)) {
+             listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
+           } else if (S_ISDIR(stat_entry.st_mode)) {
+             //listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
+           }
+       } else if (checkPresenceOfOption("a", options) || checkPresenceOfOption("all", options)){
+           lstat(dentry->d_name, &stat_entry);
+           if (S_ISREG(stat_entry.st_mode)) {
+             listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
+           } else if (S_ISDIR(stat_entry.st_mode)) {
+             //listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
+           }else if(S_ISLNK(stat_entry.st_mode)) {
+             listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
+           }
+       } else {
+           if(S_ISDIR(stat_entry.st_mode)) {
+               //listContentsPrint(dirName, dentry, stat_entry, hasb, b_size);
+           }
+       }
+   }
 
-    printf("%d\t%s\n", main_dir_size, dirName);
+   printf("%d\t%s\n", main_dir_size, dirName);
 
-    return 0;
+   return 0;
 }

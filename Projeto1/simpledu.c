@@ -29,6 +29,12 @@ int main(int argc, char *argv[], char *envp[]) {
     char *key, *p;
     clock_gettime(CLOCK_MONOTONIC_RAW, &beginning);
 
+    /*printf("ARGC: %d\n", argc);
+    for(int i = 0; i < argc; i++) {
+      printf("[%d]: %s\n", i, argv[i]);
+    }*/
+
+
     for(int i=0; i<8; i++) {
         *(options+i) = (char*) malloc(15*sizeof(char));
     }
