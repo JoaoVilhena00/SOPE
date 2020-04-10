@@ -45,7 +45,7 @@ void  makeOptinsDiff(char *option, char *specialOption, char *check) {
 
     int l = 0;
 
-    while (option[l+2] != '\0'){
+    while (option[l+2] != '='){
         specialOption[l] = option[l+2];
         l++;
     }
