@@ -16,6 +16,9 @@
 #define false 0
 
 extern struct timespec beginning;
+extern int logfile;
+extern int global_argc;
+extern char **global_argv;
 
 
 double time_interval();
