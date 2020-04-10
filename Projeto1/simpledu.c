@@ -80,9 +80,7 @@ int main(int argc, char *argv[], char *envp[]) {
                     invalidOption(argv, argv[i], 3);
                 }
                 key = strtok(argv[i],"=");
-                if((b_size = atoi(strtok(NULL,"="))) == 0) {
-                    invalidOption(argv, argv[i], 3);
-                }
+                m_depth = atoi(strtok(NULL,"="));
             }
             else if (argv[i][2] == 'b') { //Adiciona ao options block-size
                 makeOptinsDiff(argv[i], options[j],forCheck);
@@ -90,9 +88,7 @@ int main(int argc, char *argv[], char *envp[]) {
                     invalidOption(argv, argv[i], 4);
                 }
                 key = strtok(argv[i],"=");
-                if((b_size = atoi(strtok(NULL,"="))) == 0) {
-                    invalidOption(argv, argv[i], 4);
-                }
+                b_size = atoi(strtok(NULL,"="));
             }
             else { //Adiciona ao options opcoes do tipo --(nome) (em vez das opçoes do tipo -(nome))
                 makeOptinsDiff(argv[i], options[j], forCheck);
