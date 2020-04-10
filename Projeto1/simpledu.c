@@ -19,9 +19,13 @@
 #define false 0
 int logfile;//fazer LOG_FILENAME="../../logfile"
 struct timespec beginning;//marks the time the program begins
+int  global_argc;
+char **global_argv;
 
 int main(int argc, char *argv[], char *envp[]) {
     logfile = open(getenv("LOG_FILENAME"), O_RDWR | O_CREAT | O_TRUNC, 0666);
+    global_argc = argc;
+    global_argv = argv;
     char dirName[100], *options[8], forCheck[25];
     int j = 0, l = 0, aux;
     int b_size = -1, m_depth = -1;
