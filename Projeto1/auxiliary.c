@@ -1,4 +1,6 @@
 #include "auxiliary.h"
+#include "registers.h"
+#include <time.h>
 
 double time_interval() {
   struct timespec ending;
@@ -14,19 +16,19 @@ void printUsage(char *argv[]) {
 void invalidArgs(char *argv[]) {
   fprintf(stderr, "Invalid Arguments!\n");
   printUsage(argv);
-  exit(1);
+  action_Exit(1);
 }
 
 void invalidBArg(char *argv[], char *val) {
   fprintf(stderr, "Invalid -B Argument! %s is not a number\n", val);
   printUsage(argv);
-  exit(1);
+  action_Exit(1);
 }
 
 void invalidOption(char *argv[], char *option, int r) {
   fprintf(stderr, "%s is not a valid option!\n", option);
   printUsage(argv);
-  exit(r);
+  action_Exit(r);
 }
 
 int validOption(char *option) {

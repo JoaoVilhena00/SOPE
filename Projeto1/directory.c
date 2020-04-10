@@ -58,7 +58,7 @@ int list_contents(char *dirName, char *options[], int b_size, int m_depth, char 
    }*/
 
     while((dentry = readdir(dir)) != NULL) {
-        sprintf(name2,"%s/%s",dirName,dentry->d_name);
+        //sprintf(name2,"%s/%s",dirName,dentry->d_name);
         stat(name2, &stat_entry);
 
         if(checkPresenceOfOption("b",options) || checkPresenceOfOption("bytes",options)) {
@@ -91,11 +91,11 @@ int list_contents(char *dirName, char *options[], int b_size, int m_depth, char 
             childpid = wait(&status);
           } else if(pid == 0 ) {
             if(m_depth == 0) {
-              exit(0);
+              action_Exit(0);
             }
             execvp(args[0], args);
             perror("EXEC ERROR");
-            exit(1);
+            action_Exit(1);
           }
         }
 
@@ -125,14 +125,11 @@ int list_contents(char *dirName, char *options[], int b_size, int m_depth, char 
 
     printf("%d\t%s\n", main_dir_size, dirName);
 
-    /*
+    
     while(waitpid(-1,NULL,WNOHANG)) {
-      printf("***\n");
     }
-    */
-
-
+    
     closedir(dir);
 
-    exit(0);
+    action_Exit(0);
 }

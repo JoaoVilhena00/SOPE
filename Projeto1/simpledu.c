@@ -15,6 +15,7 @@
 #include <signal.h>
 #include <limits.h>
 
+
 #define true 1
 #define false 0
 int logfile;//fazer LOG_FILENAME="../../logfile"
@@ -32,10 +33,6 @@ int main(int argc, char *argv[], char *envp[]) {
     long conv;
     char *key, *p;
     clock_gettime(CLOCK_MONOTONIC_RAW, &beginning);
-
-    /*for(int i = 0; i < argc; i++) {
-      printf("[%d]: %s\n", i, argv[i]);
-    }*/
 
     for(int i=0; i<8; i++) {
         *(options+i) = (char*) malloc(15*sizeof(char));
@@ -107,12 +104,12 @@ int main(int argc, char *argv[], char *envp[]) {
     if (b_size == -1) {
       if(checkRepeatedElements(options, argc-3) == true) {
           printf("There is repeated elements\n");
-          exit(6);
+          action_Exit(6);
       }
     } else {
       if(checkRepeatedElements(options, argc-4) == true) {
           printf("There is repeated elements\n");
-          exit(6);
+          action_Exit(6);
       }
     }
 
