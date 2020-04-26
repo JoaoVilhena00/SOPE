@@ -2,16 +2,28 @@
 #include "stdlib.h"
 #include "string.h"
 #include <pthread.h>
-#include "auxiliary.h"
+
+void print_argv(int argc, char *argv[]) {
+  printf("\n----- PRINT ARGV -----\n");
+  for (int i = 0; i < argc; i++) {
+    printf("argv[%d]: %s\n", i, argv[i]);
+  }
+  printf("----------------------\n");
+}
+
+void print_usage() {
+  printf("\nArguments not valid!");
+  printf("\nUsage: Q1 <-t nsecs> [-l nplaces] [-n nthreads] fifoname\n");
+  exit(1);
+}
 
 void print_options(int argc, char *options[], int nsecs, int nplaces, int nthreads, char *fifoname) {
-  if(nsecs != -1) {
-    argc -= 1;
-  }
-
-  printf("\n----- PRINT OPTIONS -----\n");
-  for (int i = 1; i < argc; i++) {
-    printf("options[%d]: %s\n", i-1, options[i-1]);
+    if(nsecs != -1 || nplaces != -1 || nthreads != -1) {
+        argc -= 1;
+    }
+    printf("\n----- PRINT OPTIONS -----\n");
+    for (int i = 1; i < argc; i++) {
+        printf("options[%d]: %s\n", i-1, options[i-1]);
     }
     if(nsecs != -1) {
         printf("nsecs = %d\n", nsecs);
@@ -30,7 +42,7 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
 
     int j=0;
 
-    if(argc < 5) {
+    if(argc > 8) {
         print_usage();
     }
 
@@ -64,7 +76,9 @@ int main(int argc, char *argv[]) {
     char *options[8];
     char fifoname[15];
     int nsecs = -1, nplaces = -1, nthreads = -1;
-  
+    
+    print_argv(argc, argv);
+
     for (int i = 0; i < 8; i++) {
         *(options + i) = (char *) malloc(15 * sizeof(char));
     }
