@@ -1,6 +1,6 @@
-#ifndef AUXILIARY.H
-#define AUXILIAY.H
+#ifndef AUXILIARY_H_
+#define AUXILIAY_H_
 
 void print_usage();
 
-#endif
+#endif //AUXILIARY_H_
