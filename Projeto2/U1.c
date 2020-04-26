@@ -2,6 +2,9 @@
 #include "stdlib.h"
 #include "string.h"
 #include <pthread.h>
+#include <unistd.h>
+
+#define NUMTHRDS 200
 
 void print_usage() {
   printf("\nArguments not valid!");
@@ -60,15 +63,40 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
   return 0;
 }
 
-int create_threads(int nsecs, char *fifoname) {
+void *pedido(void* arg) {
   
-  return 0;
+  //printf("I m thread with tid: %d\n", *(int *) arg);
+
+
+  pthread_exit(NULL);
+
+}
+
+
+void create_threads(int nsecs, char *fifoname) {
+  
+  pthread_t tid[NUMTHRDS];
+  int j = 0;
+
+  while((nsecs = sleep(nsecs)) > 0) {
+    pthread_create(&tid[j], NULL, pedido, NULL);
+    sleep(0.005);
+    j++;
+  }
+
+  for(int i=0; i<NUMTHRDS; i++) {
+    pthread_join(tid[i],NULL);
+    printf("I m thread %ld and i just finished!\n", tid[i]);
+  }
+
+  
 }
 
 int main(int argc, char *argv[]) {
   char *options[8];
   char fifoname[15];
   int nsecs = -1;
+  
 
   //print_argv(argc, argv);
 
@@ -80,5 +108,9 @@ int main(int argc, char *argv[]) {
 
   print_options(argc, options, nsecs, fifoname);
 
+  
+  create_threads(nsecs, fifoname);
+
+  
   return 0;
 }
