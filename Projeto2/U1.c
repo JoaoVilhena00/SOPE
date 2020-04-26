@@ -2,12 +2,8 @@
 #include "stdlib.h"
 #include "string.h"
 #include <pthread.h>
+#include "auxiliary.h"
 
-void print_usage() {
-  printf("\nArguments not valid!");
-  printf("\nUsage: U1 <-t nsecs> fifoname\n");
-  exit(1);
-}
 
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
