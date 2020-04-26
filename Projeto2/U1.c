@@ -1,10 +1,10 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <unistd.h>
 
-#define NUMTHRDS 200
+#define NUMTHRDS 500
 
 void print_usage() {
   printf("\nArguments not valid!");
@@ -34,6 +34,7 @@ void print_options(int argc, char *options[], int nsecs, char *fifoname) {
   }
   printf("fifoname: %s\n", fifoname);
   printf("-------------------------\n");
+  
 }
 
 int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifoname) {
@@ -50,22 +51,23 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
       if(i >= argc)
         print_usage();
       sscanf(argv[i], "%d", nsecs);
+      
     } else {
       strcpy(fifoname, argv[i]);
       aux++;
     }
     j++;
   }
-
+  
   if (aux == argc-1 && argc == 3)
     print_usage();
 
   return 0;
 }
 
-void *pedido(void* arg) {
+void *pedido(void *arg) {
   
-  //printf("I m thread with tid: %d\n", *(int *) arg);
+  printf("I m executing....");
 
 
   pthread_exit(NULL);
@@ -78,11 +80,16 @@ void create_threads(int nsecs, char *fifoname) {
   pthread_t tid[NUMTHRDS];
   int j = 0;
 
-  while((nsecs = sleep(nsecs)) > 0) {
+  
+
+  while((nsecs = sleep(nsecs)) > 0 || j >= 11) {
+    tid[j] = j+1; 
     pthread_create(&tid[j], NULL, pedido, NULL);
     sleep(0.005);
     j++;
   }
+
+  printf("****");
 
   for(int i=0; i<NUMTHRDS; i++) {
     pthread_join(tid[i],NULL);
@@ -106,11 +113,14 @@ int main(int argc, char *argv[]) {
 
   get_options(argc, argv, options, &nsecs, fifoname);
 
+  
+
   print_options(argc, options, nsecs, fifoname);
 
   
+
   create_threads(nsecs, fifoname);
 
   
-  return 0;
+  pthread_exit(0);
 }
