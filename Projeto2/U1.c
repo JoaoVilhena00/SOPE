@@ -68,9 +68,10 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
 
 void *client(void *arg) {
   
-  printf("I Start Executing...");
-  sleep(2);
-  printf("I m executing....\n");
+  pthread_t selftid = pthread_self();
+
+  printf("I m thread %ld\n", selftid);
+
   pthread_exit(NULL);
 
 }
@@ -79,17 +80,16 @@ void *client(void *arg) {
 void create_threads(int nsecs, char *fifoname) {
   
   pthread_t tid[NUMTHRDS];
-  int j = 0;
+  
 
   for(int i=0; i<NUMTHRDS; i++) {
-    pthread_create(&tid[j], NULL, client, NULL);
+    pthread_create(&tid[i], NULL, client, NULL);
     sleep(0.005);
-    j++;
   }
   
-  for(int i=0; i<NUMTHRDS; i++) {
-    pthread_join(tid[i-1],NULL);
-    printf("I m thread %ld and i just finished!\n", tid[i]);
+  for(int j=0; j<NUMTHRDS; j++) {
+    pthread_join(tid[j],NULL);
+    printf("I m thread %ld and i just finished!\n", tid[j]);
   }
 
   
