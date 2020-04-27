@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include <time.h>
 
 #define NUMTHRDS 5
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
@@ -69,26 +70,35 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
   return 0;
 }
 
-void sendOrder(char *fifoname) {
+void sendOrder(char *fifoname, int usingTime) {
 
   int fd;
+  char timeMessage[2];
 
   do {
-    if((fd = open(fifoname, O_WRONLY)) == -1){
+    if((fd = open(fifoname, O_WRONLY | O_CREAT)) == -1){
       perror("File Error");
     }
     if(fd == -1)
       sleep(1);
 
   }while(fd == -1);
+
+
+  //escrever no fifo
+
 }
 
 void *client(void *arg) {
   
   pthread_t selftid = pthread_self();
 
-  
+  int usingTime = rand();
 
+
+  sendOrder((char *) arg, usingTime);
+
+  
   pthread_exit(NULL);
 
 }
@@ -99,7 +109,7 @@ void create_threads(int nsecs, char *fifoname) {
   
 
   for(int i=0; i<NUMTHRDS; i++) {
-    pthread_create(&tid[i], NULL, client, NULL);
+    pthread_create(&tid[i], NULL, client, (void*) fifoname);
     sleep(0.005);
   }
   
@@ -113,6 +123,7 @@ int main(int argc, char *argv[]) {
   char *options[8];
   char fifoname[15];
   int nsecs = -1;
+  srand(time(NULL));
   
 
   //print_argv(argc, argv);

@@ -85,11 +85,11 @@ void createPublicFIFO(char *fifoname) {
     exit(1);
   }
 
-  if(fd = open(fifoname, O_RDONLY) == -1){
+  if(fd = open(fifoname, O_RDONLY | O_CREAT) == -1){
       perror("File Error");
   }
 
-  
+
 
 
 
@@ -110,6 +110,8 @@ int main(int argc, char *argv[]) {
     get_options(argc, argv, options, &nsecs, &nplaces, &nthreads, fifoname);
 
     print_options(argc, options, nsecs, nplaces, nthreads, fifoname);
+
+    //createPublicFIFO(fifoname);
 
     return 0;
 }
