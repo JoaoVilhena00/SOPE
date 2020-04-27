@@ -1,7 +1,11 @@
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
@@ -71,6 +75,26 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
         j++;
     }
 }
+
+void createPublicFIFO(char *fifoname) {
+  
+  int fd;
+
+  if(mkfifo(fifoname, 0666) == -1) {
+    perror("FIFO Error");
+    exit(1);
+  }
+
+  if(fd = open(fifoname, O_RDONLY) == -1){
+      perror("File Error");
+  }
+
+  
+
+
+
+}
+
 
 int main(int argc, char *argv[]) {
     char *options[8];

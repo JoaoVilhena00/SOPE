@@ -3,6 +3,9 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
 
 #define NUMTHRDS 5
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
@@ -66,16 +69,29 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
   return 0;
 }
 
+void sendOrder(char *fifoname) {
+
+  int fd;
+
+  do {
+    if((fd = open(fifoname, O_WRONLY)) == -1){
+      perror("File Error");
+    }
+    if(fd == -1)
+      sleep(1);
+
+  }while(fd == -1);
+}
+
 void *client(void *arg) {
   
   pthread_t selftid = pthread_self();
 
-  printf("I m thread %ld\n", selftid);
+  
 
   pthread_exit(NULL);
 
 }
-
 
 void create_threads(int nsecs, char *fifoname) {
   
@@ -91,8 +107,6 @@ void create_threads(int nsecs, char *fifoname) {
     pthread_join(tid[j],NULL);
     printf("I m thread %ld and i just finished!\n", tid[j]);
   }
-
-  
 }
 
 int main(int argc, char *argv[]) {
