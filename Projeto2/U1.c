@@ -4,7 +4,8 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define NUMTHRDS 500
+#define NUMTHRDS 5
+pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 
 void print_usage() {
   printf("\nArguments not valid!");
@@ -65,10 +66,14 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
   return 0;
 }
 
-void *pedido(void *arg) {
+void *client(void *arg) {
   
-  printf("I m executing....");
+  printf("I Start Executing...");
 
+  pthread_mutex_lock(&mut);
+  printf("I m executing....\n");
+  sleep(5);
+  pthread_mutex_unlock(&mut);
 
   pthread_exit(NULL);
 
@@ -80,19 +85,15 @@ void create_threads(int nsecs, char *fifoname) {
   pthread_t tid[NUMTHRDS];
   int j = 0;
 
-  
-
-  while((nsecs = sleep(nsecs)) > 0 || j >= 11) {
-    tid[j] = j+1; 
-    pthread_create(&tid[j], NULL, pedido, NULL);
+  for(int i=0; i<NUMTHRDS; i++) {
+    pthread_create(&tid[j], NULL, client, NULL);
     sleep(0.005);
     j++;
   }
-
-  printf("****");
+  
 
   for(int i=0; i<NUMTHRDS; i++) {
-    pthread_join(tid[i],NULL);
+    pthread_join(tid[i-1],NULL);
     printf("I m thread %ld and i just finished!\n", tid[i]);
   }
 
