@@ -69,12 +69,8 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
 void *client(void *arg) {
   
   printf("I Start Executing...");
-
-  pthread_mutex_lock(&mut);
+  sleep(2);
   printf("I m executing....\n");
-  sleep(5);
-  pthread_mutex_unlock(&mut);
-
   pthread_exit(NULL);
 
 }
@@ -91,7 +87,6 @@ void create_threads(int nsecs, char *fifoname) {
     j++;
   }
   
-
   for(int i=0; i<NUMTHRDS; i++) {
     pthread_join(tid[i-1],NULL);
     printf("I m thread %ld and i just finished!\n", tid[i]);
