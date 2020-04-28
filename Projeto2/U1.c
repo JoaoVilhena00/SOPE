@@ -84,7 +84,8 @@ void *client(void *arg) {
   pthread_t selftid = pthread_self();
   int usingTime = rand();
 
-  //sendOrder((char *) arg, usingTime);
+  //sendOrder((char *) arg, usingTime); funçao que escreve no fifo o pedido
+  //                                     que vai ser enviado para o Q1
 
   pthread_exit(NULL);
 

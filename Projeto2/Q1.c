@@ -87,8 +87,8 @@ void *server(void *arg) {
     pthread_t selftid = pthread_self();
     
     /*
-    do {
-        nr = read(fd, message, 1);
+    do {                                Parte em que ele le o pedido
+        nr = read(fd, message, 1);      do cliente
         i++;
     }while(nr>0 && message[i] != '\0');
     */
@@ -124,12 +124,12 @@ void createPublicFIFO(char *fifoname) {
         exit(1);
     }
 
-    if(fd = open(fifoname, O_RDONLY) == -1){ //Ele fica preso aqui e o open esta estrano nao consigo resolver
+    if((fd = open(fifoname, O_RDONLY)) == -1){ //Ele fica preso aqui e o open esta estrano nao consigo resolver
         perror("File Error");
         exit(2);
     }
     
-    printf("*****\n");
+    
 }
 
 int main(int argc, char *argv[]) {
