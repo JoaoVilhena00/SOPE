@@ -110,7 +110,7 @@ void create_threads(int nsecs, char *fifoname) {
 void openFIFOforWriting(char *fifoname) {
 
   do {
-    if((fd = open(fifoname, O_WRONLY)) == -1){
+    if((fd = open("/tmp/ola", O_WRONLY)) == -1){
       perror("File Error");
     }
     if(fd == -1)
