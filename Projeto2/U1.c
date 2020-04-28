@@ -40,14 +40,14 @@ void print_options(int argc, char *options[], int nsecs, char *fifoname) {
   }
   printf("fifoname: %s\n", fifoname);
   printf("-------------------------\n");
-  
+
 }
 
 int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifoname) {
   int aux = 0;
   int j = 0;
 
-  if(argc > 4)
+  if(argc > 4 || argc < 2)
     print_usage();
 
   for(int i = 1; i < argc; i++) {
@@ -57,14 +57,14 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
       if(i >= argc)
         print_usage();
       sscanf(argv[i], "%d", nsecs);
-      
+
     } else {
       strcpy(fifoname, argv[i]);
       aux++;
     }
     j++;
   }
-  
+
   if (aux == argc-1 && argc == 3)
     print_usage();
 
@@ -74,13 +74,13 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
 void sendOrder(char *fifoname, int usingTime) {
 
   char timeMessage[4];
-  
+
   sprintf(timeMessage, "%d", usingTime);
   write(fd, timeMessage, strlen(timeMessage)+1);
 }
 
 void *client(void *arg) {
-  
+
   pthread_t selftid = pthread_self();
   int usingTime = rand();
 
@@ -92,15 +92,15 @@ void *client(void *arg) {
 }
 
 void create_threads(int nsecs, char *fifoname) {
-  
+
   pthread_t tid[NUMTHRDS];
-  
+
 
   for(int i=0; i<NUMTHRDS; i++) {
     pthread_create(&tid[i], NULL, client, (void*) fifoname);
     sleep(0.005);
   }
-  
+
   for(int j=0; j<NUMTHRDS; j++) {
     pthread_join(tid[j],NULL);
     printf("I m thread %ld and i just finished!\n", tid[j]);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
   char fifoname[15];
   int nsecs = -1;
   srand(time(NULL));
-  
+
   for (int i = 0; i < 8; i++) {
     *(options + i) = (char *) malloc(15 * sizeof(char));
   }
@@ -133,14 +133,14 @@ int main(int argc, char *argv[]) {
 
   print_options(argc, options, nsecs, fifoname);
 
-  
+
 
   openFIFOforWriting(fifoname);
 
-  
+
 
   create_threads(nsecs, fifoname);
-  
-  
+
+
   pthread_exit(0);
 }
