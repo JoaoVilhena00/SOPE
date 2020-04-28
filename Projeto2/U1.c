@@ -10,6 +10,7 @@
 
 #define NUMTHRDS 5
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+int fd;
 
 void print_usage() {
   printf("\nArguments not valid!");
@@ -72,33 +73,19 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
 
 void sendOrder(char *fifoname, int usingTime) {
 
-  int fd;
-  char timeMessage[2];
-
-  do {
-    if((fd = open(fifoname, O_WRONLY | O_CREAT)) == -1){
-      perror("File Error");
-    }
-    if(fd == -1)
-      sleep(1);
-
-  }while(fd == -1);
-
-
-  //escrever no fifo
-
+  char timeMessage[4];
+  
+  sprintf(timeMessage, "%d", usingTime);
+  write(fd, timeMessage, strlen(timeMessage)+1);
 }
 
 void *client(void *arg) {
   
   pthread_t selftid = pthread_self();
-
   int usingTime = rand();
 
+  //sendOrder((char *) arg, usingTime);
 
-  sendOrder((char *) arg, usingTime);
-
-  
   pthread_exit(NULL);
 
 }
@@ -119,29 +106,40 @@ void create_threads(int nsecs, char *fifoname) {
   }
 }
 
+void openFIFOforWriting(char *fifoname) {
+
+  do {
+    if((fd = open(fifoname, O_WRONLY)) == -1){
+      perror("File Error");
+    }
+    if(fd == -1)
+      sleep(1);
+  }while(fd == -1);
+}
+
+
 int main(int argc, char *argv[]) {
   char *options[8];
   char fifoname[15];
   int nsecs = -1;
   srand(time(NULL));
   
-
-  //print_argv(argc, argv);
-
   for (int i = 0; i < 8; i++) {
     *(options + i) = (char *) malloc(15 * sizeof(char));
   }
 
   get_options(argc, argv, options, &nsecs, fifoname);
 
-  
-
   print_options(argc, options, nsecs, fifoname);
 
   
 
-  create_threads(nsecs, fifoname);
+  openFIFOforWriting(fifoname);
 
+  
+
+  create_threads(nsecs, fifoname);
+  
   
   pthread_exit(0);
 }

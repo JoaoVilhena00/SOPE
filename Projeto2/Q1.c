@@ -7,6 +7,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#define NUMTHRDS 5
+int fd;
+
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
   for (int i = 0; i < argc; i++) {
@@ -76,25 +79,58 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
     }
 }
 
-void createPublicFIFO(char *fifoname) {
-  
-  int fd;
+void *server(void *arg) {
 
-  if(mkfifo(fifoname, 0666) == -1) {
-    perror("FIFO Error");
-    exit(1);
-  }
+    int nr;
+    char message[4];
+    static int i = -1;
+    pthread_t selftid = pthread_self();
+    
+    /*
+    do {
+        nr = read(fd, message, 1);
+        i++;
+    }while(nr>0 && message[i] != '\0');
+    */
 
-  if(fd = open(fifoname, O_RDONLY | O_CREAT) == -1){
-      perror("File Error");
-  }
+    pthread_exit(NULL);
 
 
-
-
-
+    printf("====>%s\n",message);
 }
 
+
+
+
+void create_threads(int nsecs, char *fifoname) {
+
+    pthread_t tid[NUMTHRDS];
+
+    for(int i=0; i<NUMTHRDS; i++) {
+        pthread_create(&tid[i], NULL, server, (void*) fifoname);
+        sleep(0.005);
+    }
+  
+    for(int j=0; j<NUMTHRDS; j++) {
+        pthread_join(tid[j],NULL);
+        printf("I m thread %ld and i just finished!\n", tid[j]);
+    }
+}
+
+void createPublicFIFO(char *fifoname) {
+    
+    if(mkfifo(fifoname, 0666) == -1) {
+        perror("FIFO Error");
+        exit(1);
+    }
+
+    if(fd = open(fifoname, O_RDONLY) == -1){ //Ele fica preso aqui e o open esta estrano nao consigo resolver
+        perror("File Error");
+        exit(2);
+    }
+    
+    printf("*****\n");
+}
 
 int main(int argc, char *argv[]) {
     char *options[8];
@@ -111,7 +147,13 @@ int main(int argc, char *argv[]) {
 
     print_options(argc, options, nsecs, nplaces, nthreads, fifoname);
 
-    //createPublicFIFO(fifoname);
+    
+
+    createPublicFIFO(fifoname);
+
+    
+
+    create_threads(nsecs, fifoname);
 
     return 0;
 }
