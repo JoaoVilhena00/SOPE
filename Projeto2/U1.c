@@ -73,9 +73,9 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
 
 void sendOrder(char *fifoname, int usingTime) {
 
-  char timeMessage[4];
+  char timeMessage[8] = {'C', 'h', 'e', 'g', 'u', 'e', 'i', '\0'};
 
-  sprintf(timeMessage, "%d", usingTime);
+  //sprintf(timeMessage, "%d", usingTime);
   write(fd, timeMessage, strlen(timeMessage)+1);
 }
 
@@ -84,8 +84,8 @@ void *client(void *arg) {
   pthread_t selftid = pthread_self();
   int usingTime = rand();
 
-  //sendOrder((char *) arg, usingTime); funçao que escreve no fifo o pedido
-  //                                     que vai ser enviado para o Q1
+  sendOrder((char *) arg, usingTime); //funçao que escreve no fifo o pedido
+                                      //que vai ser enviado para o Q1
 
   pthread_exit(NULL);
 
@@ -110,11 +110,13 @@ void create_threads(int nsecs, char *fifoname) {
 void openFIFOforWriting(char *fifoname) {
 
   do {
-    if((fd = open("/tmp/ola", O_WRONLY)) == -1){
+    if((fd = open("/tmp/door1", O_WRONLY)) == -1){
       perror("File Error");
     }
+    printf("Waiting...\n");
     if(fd == -1)
       sleep(1);
+    
   }while(fd == -1);
 }
 

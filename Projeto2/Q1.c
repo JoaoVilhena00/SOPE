@@ -82,25 +82,22 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
 void *server(void *arg) {
 
     int nr;
-    char message[4];
+    char message[15];
     static int i = -1;
     pthread_t selftid = pthread_self();
 
-    /*
-    do {                                Parte em que ele le o pedido
-        nr = read(fd, message, 1);      do cliente
+    
+    do {  
+        nr = read(fd, message, 10);
         i++;
     }while(nr>0 && message[i] != '\0');
-    */
+    
+    printf("====>%s\n",message);
 
     pthread_exit(NULL);
 
-
-    printf("====>%s\n",message);
+    
 }
-
-
-
 
 void create_threads(int nsecs, char *fifoname) {
 
@@ -115,23 +112,24 @@ void create_threads(int nsecs, char *fifoname) {
         pthread_join(tid[j],NULL);
         printf("I m thread %ld and i just finished!\n", tid[j]);
     }
+
+
 }
 
 void createPublicFIFO(char *fifoname) {
 
-    unlink("/tmp/ola");
+    unlink("/tmp/door1");
+    char message[5];
 
-    if(mkfifo("/tmp/ola", 0660) == -1) {
+    if(mkfifo("/tmp/door1", 0660) < 0) {
         perror("FIFO Error");
         exit(1);
     }
 
-    if((fd = open("/tmp/ola", O_RDONLY)) == -1){ //Ele fica preso aqui e o open esta estrano nao consigo resolver
+    if((fd = open("/tmp/door1", O_RDONLY)) < 0){ //Ele fica preso aqui e o open esta estrano nao consigo resolver
         perror("File Error");
         exit(2);
     }
-
-
 }
 
 int main(int argc, char *argv[]) {
@@ -149,15 +147,11 @@ int main(int argc, char *argv[]) {
 
     print_options(argc, options, nsecs, nplaces, nthreads, fifoname);
 
-
-
     createPublicFIFO(fifoname);
-
-
 
     create_threads(nsecs, fifoname);
 
-    unlink("/tmp/ola");
+    unlink("/tmp/door1");
 
     return 0;
 }
