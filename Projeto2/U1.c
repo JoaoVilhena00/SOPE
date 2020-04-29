@@ -9,6 +9,7 @@
 #include <time.h>
 
 #define NUMTHRDS 5
+#define MAXUSETIME 300
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 int fd;
 
@@ -73,22 +74,21 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
 
 void sendOrder(char *fifoname, int usingTime) {
 
-  char timeMessage[8] = {'C', 'h', 'e', 'g', 'u', 'e', 'i', '\0'};
+  char timeMessage[8];
 
-  //sprintf(timeMessage, "%d", usingTime);
+  sprintf(timeMessage, "%d", usingTime);
+  printf("My time is: %s\n", timeMessage);
   write(fd, timeMessage, strlen(timeMessage)+1);
 }
 
 void *client(void *arg) {
 
   pthread_t selftid = pthread_self();
-  int usingTime = rand();
+  int usingTime = rand() % MAXUSETIME;
 
   sendOrder((char *) arg, usingTime); //funçao que escreve no fifo o pedido
                                       //que vai ser enviado para o Q1
-
   pthread_exit(NULL);
-
 }
 
 void create_threads(int nsecs, char *fifoname) {

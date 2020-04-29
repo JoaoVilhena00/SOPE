@@ -92,7 +92,7 @@ void *server(void *arg) {
         i++;
     }while(nr>0 && message[i] != '\0');
     
-    printf("====>%s\n",message);
+    printf("====>%s\n",message);//alguns threads nao recebem nada
 
     pthread_exit(NULL);
 
