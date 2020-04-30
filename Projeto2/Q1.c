@@ -7,8 +7,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define NUMTHRDS 5
+
+
+
+#define NUMTHRDS 10000
 int fd;
+
+struct timespec start;
 
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
@@ -81,41 +86,43 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
 
 void *server(void *arg) {
 
-    int nr;
-    char message[15];
-    static int i = -1;
-    pthread_t selftid = pthread_self();
+    
+    //pthread_t selftid = pthread_self();
 
-    
-    do {  
-        nr = read(fd, message, 10);
-        i++;
-    }while(nr>0 && message[i] != '\0');
-    
-    printf("====>%s\n",message);//alguns threads nao recebem nada
+    printf("==>%s\n", (char *) arg);
 
     pthread_exit(NULL);
 }
 
-void create_threads(int nsecs, char *fifoname) {
+void readFromFIFO(int nsecs, char *fifoname, int nthreads) {
 
     pthread_t tid[NUMTHRDS];
+    int nr;
+    char message[15];
+    static int i = -1;
+    int contNumThreads = 0;
 
-    for(int i=0; i<NUMTHRDS; i++) {
-        pthread_create(&tid[i], NULL, server, (void*) fifoname);
+    do {
+        nr = read(fd, message, 10);
+        if(nr == -1) {
+            perror("Read Error");
+        }
+        pthread_create(&tid[i], NULL, server, (void*) message);
+        contNumThreads++;
         sleep(0.005);
-    }
+    } while (nr < 1 || contNumThreads == nthreads);
 
-    for(int j=0; j<NUMTHRDS; j++) {
+    for(int j=0; j<contNumThreads; j++) {
         pthread_join(tid[j],NULL);
         printf("I m thread %ld and i just finished!\n", tid[j]);
     }
 }
 
-void createPublicFIFO(char *fifoname) {
+void createPublicFIFO(char *fifoname)
+ {
 
     unlink("/tmp/door1");
-    char message[5];
+    
 
     if(mkfifo("/tmp/door1", 0660) < 0) {
         perror("FIFO Error");
@@ -141,13 +148,18 @@ int main(int argc, char *argv[]) {
 
     get_options(argc, argv, options, &nsecs, &nplaces, &nthreads, fifoname);
 
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+
     print_options(argc, options, nsecs, nplaces, nthreads, fifoname);
 
     createPublicFIFO(fifoname);
-
-    create_threads(nsecs, fifoname);
+    
+    while(time_interval()<nsecs)
+        readFromFIFO(nsecs, fifoname, nthreads);
 
     unlink("/tmp/door1");
+
+    close(fd);
 
     return 0;
 }

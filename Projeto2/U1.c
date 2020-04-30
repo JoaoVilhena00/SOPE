@@ -7,11 +7,13 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <time.h>
+#include "auxiliary.h"
 
 #define NUMTHRDS 5
 #define MAXUSETIME 300
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 int fd;
+struct timespec start;
 
 void print_usage() {
   printf("\nArguments not valid!");
@@ -77,13 +79,13 @@ void sendOrder(char *fifoname, int usingTime) {
   char timeMessage[8];
 
   sprintf(timeMessage, "%d", usingTime);
-  printf("My time is: %s\n", timeMessage);
+  //printf("My time is: %s\n", timeMessage);
   write(fd, timeMessage, strlen(timeMessage)+1);
 }
 
 void *client(void *arg) {
 
-  pthread_t selftid = pthread_self();
+  //pthread_t selftid = pthread_self();
   int usingTime = rand() % MAXUSETIME;
 
   sendOrder((char *) arg, usingTime); //funçao que escreve no fifo o pedido
@@ -93,18 +95,11 @@ void *client(void *arg) {
 
 void create_threads(int nsecs, char *fifoname) {
 
-  pthread_t tid[NUMTHRDS];
-
-
-  for(int i=0; i<NUMTHRDS; i++) {
-    pthread_create(&tid[i], NULL, client, (void*) fifoname);
-    sleep(0.005);
-  }
-
-  for(int j=0; j<NUMTHRDS; j++) {
-    pthread_join(tid[j],NULL);
-    printf("I m thread %ld and i just finished!\n", tid[j]);
-  }
+  pthread_t tid;
+  
+  pthread_create(&tid, NULL, client, (void*) fifoname);
+  sleep(0.005);
+  printf("I m thread %ld and i just finished!\n", tid);
 }
 
 void openFIFOforWriting(char *fifoname) {
@@ -113,7 +108,6 @@ void openFIFOforWriting(char *fifoname) {
     if((fd = open("/tmp/door1", O_WRONLY)) == -1){
       perror("File Error");
     }
-    printf("Waiting...\n");
     if(fd == -1)
       sleep(1);
     
@@ -126,23 +120,24 @@ int main(int argc, char *argv[]) {
   char fifoname[15];
   int nsecs = -1;
   srand(time(NULL));
+ 
 
   for (int i = 0; i < 8; i++) {
     *(options + i) = (char *) malloc(15 * sizeof(char));
   }
 
   get_options(argc, argv, options, &nsecs, fifoname);
+  clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
   print_options(argc, options, nsecs, fifoname);
-
-
-
+  
   openFIFOforWriting(fifoname);
 
+  clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
+  while(time_interval() < nsecs)
+    create_threads(nsecs, fifoname);
 
-  create_threads(nsecs, fifoname);
-
-
+  close(fd);
   pthread_exit(0);
 }
