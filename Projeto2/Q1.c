@@ -136,10 +136,10 @@ void createPublicFIFO(char *fifoname)
 }
 
 int main(int argc, char *argv[]) {
+     clock_t start_t, end_t, total_t;
     char *options[8];
     char fifoname[15];
     int nsecs = -1, nplaces = -1, nthreads = -1;
-
     print_argv(argc, argv);
 
     for (int i = 0; i < 8; i++) {
@@ -153,9 +153,18 @@ int main(int argc, char *argv[]) {
     print_options(argc, options, nsecs, nplaces, nthreads, fifoname);
 
     createPublicFIFO(fifoname);
+   
+   start_t=clock();
+   end_t=clock();
+   total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
     
-    while(time_interval()<nsecs)
-        readFromFIFO(nsecs, fifoname, nthreads);
+    
+    while(total_t<nsecs){
+    readFromFIFO(nsecs, fifoname, nthreads);
+    end_t=clock();
+    total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+    }
+
 
     unlink("/tmp/door1");
 

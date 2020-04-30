@@ -120,6 +120,7 @@ int main(int argc, char *argv[]) {
   char fifoname[15];
   int nsecs = -1;
   srand(time(NULL));
+  clock_t start_t, end_t, total_t;
  
 
   for (int i = 0; i < 8; i++) {
@@ -133,10 +134,17 @@ int main(int argc, char *argv[]) {
   
   openFIFOforWriting(fifoname);
 
-  clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+  //clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
-  while(time_interval() < nsecs)
+
+start_t=clock();
+end_t=clock();
+total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+  while(time_interval() < nsecs){
     create_threads(nsecs, fifoname);
+    end_t=clock();
+    total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+    }
 
   close(fd);
   pthread_exit(0);
