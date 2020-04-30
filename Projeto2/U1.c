@@ -7,11 +7,17 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <time.h>
+#include "auxiliary.h"
+
+
+
+
 
 #define NUMTHRDS 5
 #define MAXUSETIME 300
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 int fd;
+struct timespec start;
 
 void print_usage() {
   printf("\nArguments not valid!");
@@ -126,23 +132,30 @@ int main(int argc, char *argv[]) {
   char fifoname[15];
   int nsecs = -1;
   srand(time(NULL));
+ 
 
   for (int i = 0; i < 8; i++) {
     *(options + i) = (char *) malloc(15 * sizeof(char));
   }
 
   get_options(argc, argv, options, &nsecs, fifoname);
+   clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
   print_options(argc, options, nsecs, fifoname);
 
 
-
+  
   openFIFOforWriting(fifoname);
 
 
 
+clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+
+//while(time_interval()<nsecs)
   create_threads(nsecs, fifoname);
 
 
+
+  close(fd);
   pthread_exit(0);
 }

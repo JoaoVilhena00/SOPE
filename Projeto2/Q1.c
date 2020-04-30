@@ -7,8 +7,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+
+
+
 #define NUMTHRDS 5
 int fd;
+
+struct timespec start;
 
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
@@ -116,7 +121,8 @@ void create_threads(int nsecs, char *fifoname) {
 
 }
 
-void createPublicFIFO(char *fifoname) {
+void createPublicFIFO(char *fifoname)
+ {
 
     unlink("/tmp/door1");
     char message[5];
@@ -144,14 +150,20 @@ int main(int argc, char *argv[]) {
     }
 
     get_options(argc, argv, options, &nsecs, &nplaces, &nthreads, fifoname);
+ 
+
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
     print_options(argc, options, nsecs, nplaces, nthreads, fifoname);
 
     createPublicFIFO(fifoname);
-
+    //while(time_interval()<nsecs)
     create_threads(nsecs, fifoname);
 
     unlink("/tmp/door1");
+
+    close(fd);
 
     return 0;
 }
