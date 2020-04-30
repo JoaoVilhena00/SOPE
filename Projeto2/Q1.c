@@ -95,8 +95,6 @@ void *server(void *arg) {
     printf("====>%s\n",message);//alguns threads nao recebem nada
 
     pthread_exit(NULL);
-
-    
 }
 
 void create_threads(int nsecs, char *fifoname) {
@@ -112,8 +110,6 @@ void create_threads(int nsecs, char *fifoname) {
         pthread_join(tid[j],NULL);
         printf("I m thread %ld and i just finished!\n", tid[j]);
     }
-
-
 }
 
 void createPublicFIFO(char *fifoname) {
