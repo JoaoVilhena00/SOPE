@@ -140,7 +140,9 @@ int main(int argc, char *argv[]) {
 start_t=clock();
 end_t=clock();
 total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
-  while(time_interval() < nsecs){
+
+
+  while(total_t < nsecs){
     create_threads(nsecs, fifoname);
     end_t=clock();
     total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
