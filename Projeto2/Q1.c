@@ -91,17 +91,17 @@ void *server(void *arg) {
     static int i = -1;
     pthread_t selftid = pthread_self();
 
-    
-    do {  
-        nr = read(fd, message, 10);
-        i++;
-    }while(nr>0 && message[i] != '\0');
-    
-    printf("====>%s\n",message);//alguns threads nao recebem nada
+
+    do {
+      nr = read(fd, message, 10);
+      if(nr == -1) {
+        perror("Read Error");
+      }
+    } while (nr < 1);
+
+    printf("====> %s\n", message);
 
     pthread_exit(NULL);
-
-    
 }
 
 void create_threads(int nsecs, char *fifoname) {
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
     }
 
     get_options(argc, argv, options, &nsecs, &nplaces, &nthreads, fifoname);
- 
+
 
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
