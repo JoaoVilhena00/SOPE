@@ -76,10 +76,10 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
 
 void sendOrder(char *fifoname, int usingTime) {
 
-  char timeMessage[8];
+  char timeMessage[15];
 
   sprintf(timeMessage, "%d", usingTime);
-  //printf("My time is: %s\n", timeMessage);
+  printf("My time is: %s\n", timeMessage);
   write(fd, timeMessage, strlen(timeMessage)+1);
 }
 
@@ -96,10 +96,10 @@ void *client(void *arg) {
 void create_threads(int nsecs, char *fifoname) {
 
   pthread_t tid;
-  
+
   pthread_create(&tid, NULL, client, (void*) fifoname);
   sleep(0.005);
-  printf("I m thread %ld and i just finished!\n", tid);
+  //printf("I m thread %ld and i just finished!\n", tid);
 }
 
 void openFIFOforWriting(char *fifoname) {
@@ -110,7 +110,7 @@ void openFIFOforWriting(char *fifoname) {
     }
     if(fd == -1)
       sleep(1);
-    
+
   }while(fd == -1);
 }
 
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   int nsecs = -1;
   srand(time(NULL));
   clock_t start_t, end_t, total_t;
- 
+
 
   for (int i = 0; i < 8; i++) {
     *(options + i) = (char *) malloc(15 * sizeof(char));
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
   clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
   print_options(argc, options, nsecs, fifoname);
-  
+
   openFIFOforWriting(fifoname);
 
   //clock_gettime(CLOCK_MONOTONIC_RAW, &start);
