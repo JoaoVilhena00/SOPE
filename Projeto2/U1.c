@@ -137,16 +137,16 @@ int main(int argc, char *argv[]) {
   //clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
 
-start_t=clock();
-end_t=clock();
-total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+  start_t=clock();
+  end_t=clock();
+  total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
 
 
   while(total_t < nsecs){
     create_threads(nsecs, fifoname);
     end_t=clock();
     total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
-    }
+  }
 
   close(fd);
   pthread_exit(0);

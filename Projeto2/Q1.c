@@ -94,7 +94,7 @@ void *server(void *arg) {
     pthread_exit(NULL);
 }
 
-void readFromFIFO(int nsecs, char *fifoname, int nthreads) {
+void readFromFIFO(int nsecs, char *fifoname, int nthreads, int start_t, int end_t, int total_t) {
 
     pthread_t tid[NUMTHRDS];
     int nr;
@@ -102,24 +102,27 @@ void readFromFIFO(int nsecs, char *fifoname, int nthreads) {
     static int i = -1;
     int contNumThreads = 0;
 
-    do {
-        nr = read(fd, message, 10);
-        if(nr == -1) {
-            perror("Read Error");
-        }
-        pthread_create(&tid[i], NULL, server, (void*) message);
-        contNumThreads++;
-        sleep(0.005);
-    } while (nr < 1 || contNumThreads == nthreads);
-
+    while(total_t<nsecs){
+        do {
+            nr = read(fd, message, 10);
+            if(nr == -1) {
+                perror("Read Error");
+            }
+            pthread_create(&tid[i], NULL, server, (void*) message);
+            contNumThreads++;
+            sleep(0.005);
+        } while (nr < 1 || contNumThreads == nthreads);
+        end_t=clock();
+        total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+    }
     for(int j=0; j<contNumThreads; j++) {
-        pthread_join(tid[j],NULL);
+        printf("*****\n");
+        pthread_join(tid[j], NULL);
         printf("I m thread %ld and i just finished!\n", tid[j]);
     }
 }
 
-void createPublicFIFO(char *fifoname)
- {
+void createPublicFIFO(char *fifoname) {
 
     unlink("/tmp/door1");
     
@@ -158,14 +161,8 @@ int main(int argc, char *argv[]) {
    end_t=clock();
    total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
     
+    readFromFIFO(nsecs, fifoname, nthreads, start_t, end_t, total_t);
     
-    while(total_t<nsecs){
-    readFromFIFO(nsecs, fifoname, nthreads);
-    end_t=clock();
-    total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
-    }
-
-
     unlink("/tmp/door1");
 
     close(fd);
