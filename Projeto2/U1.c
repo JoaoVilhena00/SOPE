@@ -12,7 +12,7 @@
 #define NUMTHRDS 5
 #define MAXUSETIME 300
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
-int fd;
+int fd, i = 0;
 struct timespec start;
 
 void print_usage() {
@@ -74,14 +74,7 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
   return 0;
 }
 
-void sendOrder(char *fifoname, int usingTime) {
 
-  char timeMessage[15];
-
-  sprintf(timeMessage, "%d", usingTime);
-  //printf("My time is: %s\n", timeMessage);
-  write(fd, timeMessage, strlen(timeMessage)+1);
-}
 
 void createPrivateFIFO(pthread_t tid) {
 
@@ -96,14 +89,49 @@ void createPrivateFIFO(pthread_t tid) {
   strcat(fifoname, ".");
   strcat(fifoname, tidStr);
 
-  printf("FifoName: %s\n", fifoname);
+  //printf("FifoName: %s\n", fifoname);
 
   if(mkfifo(fifoname, O_RDONLY) < 0) {
     perror("FIFO error");
   }
-  
-   
+}
 
+void sendOrder(char *fifoname, int dur, pthread_t tid) {
+
+  char Message[70]; //, iStr[5], pidStr[10], tidStr[15], durStr[10];
+
+  sprintf(Message, "%d", dur);
+  printf("My time is: %s\n", Message);
+  
+
+  /*
+  pthread_mutex_lock(&mut);
+  i++;
+  strcpy(Message, "[");
+  sprintf(iStr, "%d", i);
+  strcat(Message, iStr);
+  strcat(Message, ",");
+
+  sprintf(pidStr, "%d", getpid());
+  strcat(Message, pidStr);
+  strcat(Message, ",");
+
+  sprintf(tidStr, "%ld", tid);
+  strcat(Message, tidStr);
+  strcat(Message, ",");
+
+  sprintf(durStr, "%d", dur);
+  strcat(Message, durStr);
+  strcat(Message, ",");
+
+  strcat(Message, "-1");
+  strcat(Message, "]");
+  pthread_mutex_unlock(&mut);
+
+  printf("%s\n", Message);
+  */
+  
+  write(fd, Message, sizeof(Message));
 }
 
 
@@ -112,8 +140,10 @@ void *client(void *arg) {
   int usingTime = rand() % MAXUSETIME;
   pthread_t tid = pthread_self();
 
-  sendOrder((char *) arg, usingTime);
+  
+  sendOrder((char *) arg, usingTime, tid);
   createPrivateFIFO(tid);
+  
   
   pthread_exit(NULL);
 }

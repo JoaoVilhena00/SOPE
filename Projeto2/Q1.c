@@ -138,11 +138,11 @@ int main(int argc, char *argv[]) {
 
    pthread_t tid;
    int nr;
-   char message[15];
+   char message[70];
 
 
     while(total_t<nsecs){
-      nr = read(fd, message, 10);
+      nr = read(fd, message, sizeof(message));
       if(nr == -1) {
           perror("Read Error");
       }
