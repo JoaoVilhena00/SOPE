@@ -7,13 +7,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
-
-
 #define NUMTHRDS 10000
+#define BILLION  1000000000.0
 int fd;
-
-struct timespec start;
 
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
@@ -86,15 +82,9 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
 
 void *server(void *arg) {
 
-
-    //pthread_t selftid = pthread_self();
-
     printf("==>%s\n", (char *) arg);
 
     pthread_exit(NULL);
-}
-
-void readFromFIFO(int nsecs, char *fifoname, int nthreads) {
 }
 
 void createPublicFIFO(char *fifoname) {
@@ -107,18 +97,21 @@ void createPublicFIFO(char *fifoname) {
         exit(1);
     }
 
-    if((fd = open("/tmp/door1", O_RDONLY)) < 0){ //Ele fica preso aqui e o open esta estrano nao consigo resolver
+    if((fd = open("/tmp/door1", O_RDONLY)) < 0){
         perror("File Error");
         exit(2);
     }
 }
 
 int main(int argc, char *argv[]) {
-     clock_t start_t, end_t, total_t;
     char *options[8];
     char fifoname[15];
     int nsecs = -1, nplaces = -1, nthreads = -1;
     print_argv(argc, argv);
+
+    struct timespec start;
+    struct timespec end;
+    double accum;
 
     for (int i = 0; i < 8; i++) {
         *(options + i) = (char *) malloc(15 * sizeof(char));
@@ -132,26 +125,33 @@ int main(int argc, char *argv[]) {
 
     createPublicFIFO(fifoname);
 
-   start_t=clock();
-   end_t=clock();
-   total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
-
-   pthread_t tid;
-   int nr;
-   char message[70];
-
-
-    while(total_t<nsecs){
-      nr = read(fd, message, sizeof(message));
-      if(nr == -1) {
-          perror("Read Error");
+    if(clock_gettime( CLOCK_REALTIME, &start) == -1 ) {
+        perror( "clock gettime" );
+        exit( EXIT_FAILURE );
       }
-      if (nr > 0) {
-        pthread_create(&tid, NULL, server, (void*) message);
-        pthread_join(tid,NULL);
+
+    clock_gettime(CLOCK_REALTIME, &end);
+    accum = ( end.tv_sec - start.tv_sec )
+            + ( end.tv_nsec - start.tv_nsec )
+              / BILLION;
+
+    while(accum < nsecs){
+      pthread_t tid;
+      int nr = 0;
+      char message[70];
+
+      while (nr <= 0 && accum < nsecs) {
+        nr = read(fd, message, sizeof(message));
+        usleep(100000);
       }
-      end_t=clock();
-      total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+
+      pthread_create(&tid, NULL, server, (void*) message);
+      pthread_join(tid,NULL);
+
+      clock_gettime(CLOCK_REALTIME, &end);
+      accum = ( end.tv_sec - start.tv_sec )
+              + ( end.tv_nsec - start.tv_nsec )
+                / BILLION;
     }
 
 

@@ -13,7 +13,7 @@
 #define MAXUSETIME 300
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 int fd, i = 0;
-struct timespec start;
+#define BILLION  1000000000.0
 
 void print_usage() {
   printf("\nArguments not valid!");
@@ -80,7 +80,7 @@ void createPrivateFIFO(pthread_t tid) {
 
   char fifoname[50], tidStr[20], pidStr[6];
   pid_t pid = getpid();
-  
+
 
   sprintf(tidStr, "%ld", tid);
   sprintf(pidStr, "%d", pid);
@@ -102,35 +102,7 @@ void sendOrder(char *fifoname, int dur, pthread_t tid) {
 
   sprintf(Message, "%d", dur);
   printf("My time is: %s\n", Message);
-  
 
-  /*
-  pthread_mutex_lock(&mut);
-  i++;
-  strcpy(Message, "[");
-  sprintf(iStr, "%d", i);
-  strcat(Message, iStr);
-  strcat(Message, ",");
-
-  sprintf(pidStr, "%d", getpid());
-  strcat(Message, pidStr);
-  strcat(Message, ",");
-
-  sprintf(tidStr, "%ld", tid);
-  strcat(Message, tidStr);
-  strcat(Message, ",");
-
-  sprintf(durStr, "%d", dur);
-  strcat(Message, durStr);
-  strcat(Message, ",");
-
-  strcat(Message, "-1");
-  strcat(Message, "]");
-  pthread_mutex_unlock(&mut);
-
-  printf("%s\n", Message);
-  */
-  
   write(fd, Message, sizeof(Message));
 }
 
@@ -140,21 +112,18 @@ void *client(void *arg) {
   int usingTime = rand() % MAXUSETIME;
   pthread_t tid = pthread_self();
 
-  
   sendOrder((char *) arg, usingTime, tid);
-  createPrivateFIFO(tid);
-  
-  
+  //createPrivateFIFO(tid);
+
   pthread_exit(NULL);
 }
 
 void create_threads(int nsecs, char *fifoname) {
-
   pthread_t tid;
 
   pthread_create(&tid, NULL, client, (void*) fifoname);
-  sleep(0.005);
-
+  pthread_join(tid, NULL);
+  usleep(100000);
 }
 
 void openFIFOforWriting(char *fifoname) {
@@ -174,33 +143,37 @@ int main(int argc, char *argv[]) {
   char *options[8];
   char fifoname[15];
   int nsecs = -1;
-  srand(time(NULL));
-  clock_t start_t, end_t, total_t;
 
+  struct timespec start;
+  struct timespec end;
+  double accum;
 
   for (int i = 0; i < 8; i++) {
     *(options + i) = (char *) malloc(15 * sizeof(char));
   }
 
   get_options(argc, argv, options, &nsecs, fifoname);
-  clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
   print_options(argc, options, nsecs, fifoname);
 
   openFIFOforWriting(fifoname);
 
-  //clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+  if(clock_gettime( CLOCK_REALTIME, &start) == -1 ) {
+      perror( "clock gettime" );
+      exit( EXIT_FAILURE );
+    }
 
+  clock_gettime(CLOCK_REALTIME, &end);
+  accum = ( end.tv_sec - start.tv_sec )
+          + ( end.tv_nsec - start.tv_nsec )
+            / BILLION;
 
-  start_t=clock();
-  end_t=clock();
-  total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
-
-
-  while(total_t < nsecs){
+  while(accum < nsecs){
     create_threads(nsecs, fifoname);
-    end_t=clock();
-    total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+    clock_gettime(CLOCK_REALTIME, &end);
+    accum = ( end.tv_sec - start.tv_sec )
+            + ( end.tv_nsec - start.tv_nsec )
+              / BILLION;
   }
 
   close(fd);
