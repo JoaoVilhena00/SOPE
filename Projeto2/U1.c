@@ -79,17 +79,42 @@ void sendOrder(char *fifoname, int usingTime) {
   char timeMessage[15];
 
   sprintf(timeMessage, "%d", usingTime);
-  printf("My time is: %s\n", timeMessage);
+  //printf("My time is: %s\n", timeMessage);
   write(fd, timeMessage, strlen(timeMessage)+1);
 }
 
+void createPrivateFIFO(pthread_t tid) {
+
+  char fifoname[50], tidStr[20], pidStr[6];
+  pid_t pid = getpid();
+  
+
+  sprintf(tidStr, "%ld", tid);
+  sprintf(pidStr, "%d", pid);
+  strcpy(fifoname, "/tmp/");
+  strcat(fifoname, pidStr);
+  strcat(fifoname, ".");
+  strcat(fifoname, tidStr);
+
+  printf("FifoName: %s\n", fifoname);
+
+  if(mkfifo(fifoname, O_RDONLY) < 0) {
+    perror("FIFO error");
+  }
+  
+   
+
+}
+
+
 void *client(void *arg) {
 
-  //pthread_t selftid = pthread_self();
   int usingTime = rand() % MAXUSETIME;
+  pthread_t tid = pthread_self();
 
-  sendOrder((char *) arg, usingTime); //funçao que escreve no fifo o pedido
-                                      //que vai ser enviado para o Q1
+  sendOrder((char *) arg, usingTime);
+  createPrivateFIFO(tid);
+  
   pthread_exit(NULL);
 }
 
@@ -99,7 +124,7 @@ void create_threads(int nsecs, char *fifoname) {
 
   pthread_create(&tid, NULL, client, (void*) fifoname);
   sleep(0.005);
-  //printf("I m thread %ld and i just finished!\n", tid);
+
 }
 
 void openFIFOforWriting(char *fifoname) {
