@@ -86,7 +86,7 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
 
 void *server(void *arg) {
 
-    
+
     //pthread_t selftid = pthread_self();
 
     printf("==>%s\n", (char *) arg);
@@ -95,34 +95,13 @@ void *server(void *arg) {
 }
 
 void readFromFIFO(int nsecs, char *fifoname, int nthreads) {
-
-    pthread_t tid[NUMTHRDS];
-    int nr;
-    char message[15];
-    static int i = -1;
-    int contNumThreads = 0;
-
-    do {
-        nr = read(fd, message, 10);
-        if(nr == -1) {
-            perror("Read Error");
-        }
-        pthread_create(&tid[i], NULL, server, (void*) message);
-        contNumThreads++;
-        sleep(0.005);
-    } while (nr < 1 || contNumThreads == nthreads);
-
-    for(int j=0; j<contNumThreads; j++) {
-        pthread_join(tid[j],NULL);
-        printf("I m thread %ld and i just finished!\n", tid[j]);
-    }
 }
 
 void createPublicFIFO(char *fifoname)
  {
 
     unlink("/tmp/door1");
-    
+
 
     if(mkfifo("/tmp/door1", 0660) < 0) {
         perror("FIFO Error");
@@ -153,16 +132,27 @@ int main(int argc, char *argv[]) {
     print_options(argc, options, nsecs, nplaces, nthreads, fifoname);
 
     createPublicFIFO(fifoname);
-   
+
    start_t=clock();
    end_t=clock();
    total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
-    
-    
+
+   pthread_t tid;
+   int nr;
+   char message[15];
+
+
     while(total_t<nsecs){
-    readFromFIFO(nsecs, fifoname, nthreads);
-    end_t=clock();
-    total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+      nr = read(fd, message, 10);
+      if(nr == -1) {
+          perror("Read Error");
+      }
+      if (nr > 0) {
+        pthread_create(&tid, NULL, server, (void*) message);
+        pthread_join(tid,NULL);
+      }
+      end_t=clock();
+      total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
     }
 
 
