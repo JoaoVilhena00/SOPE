@@ -12,8 +12,14 @@
 #define NUMTHRDS 5
 #define MAXUSETIME 300
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
-int fd, i = 0;
+int fd, fd2, i = 0;
 struct timespec start;
+
+struct Fifoname{
+  char pid[7];
+  char tid[35];
+
+}Fifoname;
 
 void print_usage() {
   printf("\nArguments not valid!");
@@ -78,33 +84,50 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
 
 void createPrivateFIFO(pthread_t tid) {
 
-  char fifoname[50], tidStr[20], pidStr[6];
+  char filename[50];
   pid_t pid = getpid();
+  struct Fifoname fifoname;
   
-
-  sprintf(tidStr, "%ld", tid);
-  sprintf(pidStr, "%d", pid);
-  strcpy(fifoname, "/tmp/");
-  strcat(fifoname, pidStr);
-  strcat(fifoname, ".");
-  strcat(fifoname, tidStr);
-
+  sprintf(fifoname.tid, "%ld", tid);
+  sprintf(fifoname.pid, "%d", pid);
+  strcpy(filename, "/tmp/");
+  strcat(filename, fifoname.pid);
+  strcat(filename,".");
+  strcat(filename, fifoname.tid);
+  
   //printf("FifoName: %s\n", fifoname);
 
-  if(mkfifo(fifoname, O_RDONLY) < 0) {
+  if(mkfifo(filename, 0660) < 0) {
     perror("FIFO error");
   }
+
+  if((fd2 = open(filename, O_RDONLY)) < 0) {
+    perror("File Error");
+  }
+
+  //recieveAnswer();
 }
+
+void recieveAnswer() {
+
+  int nr, answer[45];
+
+  do {
+    nr = read(fd2, answer, sizeof(answer));
+    if(nr == -1)
+      perror("Read Error");
+  }while(nr>0 && (*answer)++ != '\0');
+
+}
+
 
 void sendOrder(char *fifoname, int dur, pthread_t tid) {
 
-  char Message[70]; //, iStr[5], pidStr[10], tidStr[15], durStr[10];
+  char Message[70], iStr[5], pidStr[10], tidStr[15], durStr[10];
 
   sprintf(Message, "%d", dur);
-  printf("My time is: %s\n", Message);
+  //printf("My time is: %s\n", Message);
   
-
-  /*
   pthread_mutex_lock(&mut);
   i++;
   strcpy(Message, "[");
@@ -128,8 +151,8 @@ void sendOrder(char *fifoname, int dur, pthread_t tid) {
   strcat(Message, "]");
   pthread_mutex_unlock(&mut);
 
-  printf("%s\n", Message);
-  */
+  //printf("%s\n", Message);
+  
   
   write(fd, Message, sizeof(Message));
 }
@@ -142,7 +165,7 @@ void *client(void *arg) {
 
   
   sendOrder((char *) arg, usingTime, tid);
-  createPrivateFIFO(tid);
+  //createPrivateFIFO(tid);
   
   
   pthread_exit(NULL);
