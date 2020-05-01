@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include "auxiliary.h"
 
 #define NUMTHRDS 10000
 #define BILLION  1000000000.0
@@ -81,8 +82,10 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
 }
 
 void *server(void *arg) {
+    struct Message * message;
+    message = (struct Message *) arg;
 
-    printf("==>%s\n", (char *) arg);
+    printf("====> %d\n", message->i);
 
     pthread_exit(NULL);
 }
@@ -138,14 +141,14 @@ int main(int argc, char *argv[]) {
     while(accum < nsecs){
       pthread_t tid;
       int nr = 0;
-      char message[70];
+      struct Message message;
 
       while (nr <= 0 && accum < nsecs) {
-        nr = read(fd, message, sizeof(message));
+        nr = read(fd, &message, sizeof(message));
         usleep(100000);
       }
 
-      pthread_create(&tid, NULL, server, (void*) message);
+      pthread_create(&tid, NULL, server, &message);
       pthread_join(tid,NULL);
 
       clock_gettime(CLOCK_REALTIME, &end);

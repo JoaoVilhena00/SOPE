@@ -3,6 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
@@ -74,54 +75,55 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
   return 0;
 }
 
-
-
 void createPrivateFIFO(pthread_t tid) {
 
-  char fifoname[50], tidStr[20], pidStr[6];
-  pid_t pid = getpid();
+  char fifoname[64];
+  pid_t pid;
 
+  pid = getpid();
 
-  sprintf(tidStr, "%ld", tid);
-  sprintf(pidStr, "%d", pid);
-  strcpy(fifoname, "/tmp/");
-  strcat(fifoname, pidStr);
-  strcat(fifoname, ".");
-  strcat(fifoname, tidStr);
-
-  //printf("FifoName: %s\n", fifoname);
+  sprintf(fifoname, "/tmp/%d.%ld", pid, tid);
 
   if(mkfifo(fifoname, O_RDONLY) < 0) {
     perror("FIFO error");
   }
 }
 
-void sendOrder(char *fifoname, int dur, pthread_t tid) {
+void sendOrder(int seq_i, int dur, pthread_t tid) {
 
-  char Message[70]; //, iStr[5], pidStr[10], tidStr[15], durStr[10];
+  struct Message message;
 
-  sprintf(Message, "%d", dur);
-  printf("My time is: %s\n", Message);
+  message.i = seq_i;
+  message.pid = getpid();
+  message.tid = tid;
+  message.dur = dur;
+  message.pl = -1;
 
-  write(fd, Message, sizeof(Message));
+  printf("Sent Order - %d\n", message.i);
+
+  write(fd, &message, sizeof(&message));
 }
 
 
 void *client(void *arg) {
 
   int usingTime = rand() % MAXUSETIME;
-  pthread_t tid = pthread_self();
+  int seq_i;
+  pthread_t tid;
 
-  sendOrder((char *) arg, usingTime, tid);
-  //createPrivateFIFO(tid);
+  seq_i = *((int*) arg);
+  tid = syscall(SYS_gettid);
+
+  sendOrder(seq_i, usingTime, tid);
+  createPrivateFIFO(tid);
 
   pthread_exit(NULL);
 }
 
-void create_threads(int nsecs, char *fifoname) {
+void create_threads(int nsecs, char *fifoname, int *seq_i) {
   pthread_t tid;
 
-  pthread_create(&tid, NULL, client, (void*) fifoname);
+  pthread_create(&tid, NULL, client, (void*) seq_i);
   pthread_join(tid, NULL);
   usleep(100000);
 }
@@ -142,7 +144,7 @@ void openFIFOforWriting(char *fifoname) {
 int main(int argc, char *argv[]) {
   char *options[8];
   char fifoname[15];
-  int nsecs = -1;
+  int nsecs = -1, seq_i = 1;
 
   struct timespec start;
   struct timespec end;
@@ -169,11 +171,12 @@ int main(int argc, char *argv[]) {
             / BILLION;
 
   while(accum < nsecs){
-    create_threads(nsecs, fifoname);
+    create_threads(nsecs, fifoname, &seq_i);
     clock_gettime(CLOCK_REALTIME, &end);
     accum = ( end.tv_sec - start.tv_sec )
             + ( end.tv_nsec - start.tv_nsec )
               / BILLION;
+    seq_i++;
   }
 
   close(fd);
