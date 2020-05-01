@@ -3,6 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
@@ -16,13 +17,6 @@
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 int fd, fd2, i = 0;
 struct timespec start;
-
-struct Fifoname{
-  char pid[7];
-  char tid[35];
-
-}Fifoname;
-
 void print_usage() {
   printf("\nArguments not valid!");
   printf("\nUsage: U1 <-t nsecs> fifoname\n");
@@ -82,22 +76,22 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
   return 0;
 }
 
+void recieveAnswer(int fd2) {
 
+  
+  
+
+
+
+}
 
 void createPrivateFIFO(pthread_t tid) {
 
+  char fifoname[64];
+  pid_t pid;
+  pid = getpid();
 
-  char fifoname[50], tidStr[25], pidStr[6];
-  pid_t pid = getpid();
-
-  sprintf(tidStr, "%ld", tid);
-  sprintf(pidStr, "%d", pid);
-  strcpy(fifoname, "/tmp/");
-  strcat(fifoname, pidStr);
-  strcat(fifoname, ".");
-  strcat(fifoname, tidStr);
-
-  //printf("FifoName: %s\n", fifoname);
+  sprintf(fifoname, "/tmp/%d.%ld", pid, tid);
 
   if(mkfifo(fifoname, 0660) < 0) {
     perror("FIFO error");
@@ -107,78 +101,44 @@ void createPrivateFIFO(pthread_t tid) {
     perror("File Error");
   }
 
-  //recieveAnswer();
+  recieveAnswer(fd2);
 }
 
-void recieveAnswer() {
+void sendOrder(int seq_i, int dur, pthread_t tid) {
 
-  int nr, answer[45];
+  struct Message message;
 
-  do {
-    nr = read(fd2, answer, sizeof(answer));
-    if(nr == -1)
-      perror("Read Error");
-  }while(nr>0 && (*answer)++ != '\0');
+  message.i = seq_i;
+  message.pid = getpid();
+  message.tid = tid;
+  message.dur = dur;
+  message.pl = -1;
 
-}
+  printf("Sent Order - %d\n", message.i);
 
-
-void sendOrder(char *fifoname, int dur, pthread_t tid) {
-
-  char Message[40], iStr[3], pidStr[6], tidStr[16], durStr[4];
-
-  sprintf(Message, "%d", dur);
-  //printf("My time is: %s\n", Message);
-  
-  //pthread_mutex_lock(&mut);
-  i++;
-  strcpy(Message, "[");
-  sprintf(iStr, "%d", i);
-  strcat(Message, iStr);
-  strcat(Message, ",");
-  
-
-  sprintf(pidStr, "%d", getpid());
-  strcat(Message, pidStr);
-  strcat(Message, ",");
-  
-
-  sprintf(tidStr, "%ld", tid);
-  strcat(Message, tidStr);
-  strcat(Message, ",");
-  
-
-  sprintf(durStr, "%d", dur);
-  strcat(Message, durStr);
-  strcat(Message, ",");
-  
-
-  strcat(Message, "-1");
-  strcat(Message, "]");
-  //printf("%s\n",Message);
-  //pthread_mutex_unlock(&mut);
-
-  //printf("%s\n", Message);
-  
-  
-  write(fd, Message, sizeof(Message));
+  write(fd, &message, sizeof(&message));
 }
 
 
 void *client(void *arg) {
 
   int usingTime = rand() % MAXUSETIME;
-  pthread_t tid = pthread_self();
+  int seq_i;
+  pthread_t tid;
 
-  sendOrder((char *) arg, usingTime, tid);
-  //createPrivateFIFO(tid);
+  seq_i = *((int*) arg);
+  tid = syscall(SYS_gettid);
+
+  sendOrder(seq_i, usingTime, tid);
+  createPrivateFIFO(tid);
+
   pthread_exit(NULL);
 }
 
-void create_threads(int nsecs, char *fifoname) {
+void create_threads(int nsecs, char *fifoname, int *seq_i) {
   pthread_t tid;
 
-  pthread_create(&tid, NULL, client, (void*) fifoname);
+  pthread_create(&tid, NULL, client, (void*) seq_i);
   pthread_join(tid, NULL);
   usleep(100000);
 }
@@ -199,7 +159,7 @@ void openFIFOforWriting(char *fifoname) {
 int main(int argc, char *argv[]) {
   char *options[8];
   char fifoname[15];
-  int nsecs = -1;
+  int nsecs = -1, seq_i = 1;
 
   struct timespec start;
   struct timespec end;
@@ -226,11 +186,12 @@ int main(int argc, char *argv[]) {
             / BILLION;
 
   while(accum < nsecs){
-    create_threads(nsecs, fifoname);
+    create_threads(nsecs, fifoname, &seq_i);
     clock_gettime(CLOCK_REALTIME, &end);
     accum = ( end.tv_sec - start.tv_sec )
             + ( end.tv_nsec - start.tv_nsec )
               / BILLION;
+    seq_i++;
   }
 
   close(fd);
