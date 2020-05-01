@@ -4,13 +4,14 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/syscall.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "auxiliary.h"
 
 #define NUMTHRDS 10000
 #define BILLION  1000000000.0
-int fd, fd2;
+int fd;
 
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
@@ -81,30 +82,40 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
     }
 }
 
-void writeAnswer(int fd2, struct Message *message) {
-
-
-    
-
-}
-
 void *server(void *arg) {
-    struct Message * message;
-    message = (struct Message *) arg;
-    char filename[20];
+    struct Message * request;
+    struct Message answer;
+    char fifo_answer[64];
+    int int_answer;
+    pid_t pid;
+    pthread_t tid;
 
-    printf("====> %d\n", message->i);
+    pid = getpid();
+    tid = syscall(SYS_gettid);
 
-    sprintf(filename, "/tmp/%d.%ld", getpid(), message->tid);
+    request = (struct Message *) arg;
 
-    do {
-        if((fd2 = open(filename, O_WRONLY)) < 0){
-            perror("File Error");
-        }
-    }while(fd2 == -1);
+    printf("Received order - i: %d - dur: %d\n", request->i, request->dur);
 
-    writeAnswer(fd2, message);
-    
+    sprintf(fifo_answer, "/tmp/%d.%ld", request->pid, request->tid);
+    int_answer = open(fifo_answer, O_WRONLY);
+
+    if (int_answer >= 0) {
+      printf("Opened FIFO - %s\n", fifo_answer);
+    } else {
+      printf("Error opening FIFO - %s\n", fifo_answer);
+    }
+
+    answer.i = request->i;
+    answer.pid = pid;
+    answer.tid = tid;
+    answer.dur = request->dur;
+    answer.pl = -1;
+
+    //write(int_answer, &answer, sizeof(answer));
+
+    close(int_answer);
+
     pthread_exit(NULL);
 }
 
@@ -164,6 +175,10 @@ int main(int argc, char *argv[]) {
       while (nr <= 0 && accum < nsecs) {
         nr = read(fd, &message, sizeof(message));
         usleep(100000);
+        clock_gettime(CLOCK_REALTIME, &end);
+        accum = ( end.tv_sec - start.tv_sec )
+                + ( end.tv_nsec - start.tv_nsec )
+                  / BILLION;
       }
 
       pthread_create(&tid, NULL, server, &message);

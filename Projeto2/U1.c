@@ -12,11 +12,10 @@
 
 #define NUMTHRDS 5
 #define MAXUSETIME 300
-#define BILLION 1000000000.0
-
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
-int fd, fd2, i = 0;
-struct timespec start;
+int fd, i = 0;
+#define BILLION  1000000000.0
+
 void print_usage() {
   printf("\nArguments not valid!");
   printf("\nUsage: U1 <-t nsecs> fifoname\n");
@@ -76,32 +75,15 @@ int get_options(int argc, char *argv[], char *options[], int *nsecs, char *fifon
   return 0;
 }
 
-void recieveAnswer(int fd2) {
-
-  
-  
-
-
-
-}
-
-void createPrivateFIFO(pthread_t tid) {
-
-  char fifoname[64];
-  pid_t pid;
-  pid = getpid();
-
-  sprintf(fifoname, "/tmp/%d.%ld", pid, tid);
+int createPrivateFIFO(char *fifoname) {
 
   if(mkfifo(fifoname, 0660) < 0) {
     perror("FIFO error");
+  } else {
+    printf("Created FIFO - %s\n", fifoname);
   }
 
-  if((fd2 = open(fifoname, O_RDONLY)) < 0) {
-    perror("File Error");
-  }
-
-  recieveAnswer(fd2);
+  return open(fifoname, O_RDONLY);
 }
 
 void sendOrder(int seq_i, int dur, pthread_t tid) {
@@ -114,9 +96,9 @@ void sendOrder(int seq_i, int dur, pthread_t tid) {
   message.dur = dur;
   message.pl = -1;
 
-  printf("Sent Order - %d\n", message.i);
+  printf("Sent Order - i: %d - dur: %d\n", message.i, message.dur);
 
-  write(fd, &message, sizeof(&message));
+  write(fd, &message, sizeof(message));
 }
 
 
@@ -125,12 +107,23 @@ void *client(void *arg) {
   int usingTime = rand() % MAXUSETIME;
   int seq_i;
   pthread_t tid;
+  int int_answer;
+
+  char fifoname[64];
+  pid_t pid;
+
+  pid = getpid();
 
   seq_i = *((int*) arg);
   tid = syscall(SYS_gettid);
 
   sendOrder(seq_i, usingTime, tid);
-  createPrivateFIFO(tid);
+
+  sprintf(fifoname, "/tmp/%d.%ld", pid, tid);
+  int_answer = createPrivateFIFO(fifoname);
+
+  close(int_answer);
+  unlink(fifoname);
 
   pthread_exit(NULL);
 }
