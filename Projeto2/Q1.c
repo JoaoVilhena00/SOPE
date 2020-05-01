@@ -9,7 +9,7 @@
 
 #define NUMTHRDS 10000
 #define BILLION  1000000000.0
-int fd;
+int fd, fd2;
 
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
@@ -80,9 +80,25 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
     }
 }
 
+void writeAnswer() {
+
+
+
+
+}
+
+
+
 void *server(void *arg) {
 
     printf("==>%s\n", (char *) arg);
+
+    do {
+        fd2 = open();
+    }while(fd2 == -1);
+
+
+
 
     pthread_exit(NULL);
 }
