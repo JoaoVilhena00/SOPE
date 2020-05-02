@@ -18,6 +18,7 @@ int nsecs = -1, nplaces = -1, nthreads = -1;
 struct timespec start;
 struct timespec end;
 double accum;
+int opened = 0;
 
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
@@ -108,22 +109,27 @@ void *server(void *arg) {
     tid = syscall(SYS_gettid);
 
     request = (struct Message *) arg;
-
-    printf("Received order - i: %d - dur: %d\n", request->i, request->dur);
+    regist_message(request->i, request->pid, request->tid, request->dur, request->pl, "RECVD");
 
     sprintf(fifo_answer, "/tmp/%d.%ld", request->pid, request->tid);
     int_answer = open(fifo_answer, O_WRONLY);
 
     if (int_answer >= 0) {
-      printf("Opened FIFO - %s\n", fifo_answer);
     } else {
-      printf("Error opening FIFO - %s\n", fifo_answer);
+      regist_message(request->i, request->pid, request->tid, request->dur, request->pl, "GAVUP");
     }
 
     answer.i = request->i;
     answer.pid = pid;
     answer.tid = tid;
     answer.dur = request->dur;
+
+    if (opened == 0) {
+      answer.pl = -1;
+      write(int_answer, &answer, sizeof(answer));
+      regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "2LATE");
+      pthread_exit(NULL);
+    }
 
     for(int i = 0; i < 5; i++) {
       if(*(places + i) == 0) {
@@ -140,12 +146,14 @@ void *server(void *arg) {
             + ( end.tv_nsec - start.tv_nsec )
               / BILLION;
 
-    if(answer.pl != -1 && request->dur + accum < nsecs){
+    if(answer.pl != -1 && (request->dur / 1000.0  + accum) <= nsecs) {
+      regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "ENTER");
       usleep(request->dur * 1000);
       *(places + answer.pl - 1) = 0;
+      regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "TIMUP");
+    } else if(answer.pl != -1 && request->dur + accum > nsecs) {
+      regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "2LATE");
     }
-
-    print_places();
 
     write(int_answer, &answer, sizeof(answer));
 
@@ -174,6 +182,8 @@ int main(int argc, char *argv[]) {
     char name[64];
     char fifoname[64];
     print_argv(argc, argv);
+
+    opened = 1;
 
     for (int i = 0; i < 8; i++) {
         *(options + i) = (char *) malloc(15 * sizeof(char));
@@ -225,6 +235,21 @@ int main(int argc, char *argv[]) {
                 / BILLION;
     }
 
+    opened = 0;
+
+    pthread_t tid;
+    int nr = 0;
+    struct Message message;
+
+    do {
+      nr = read(fd, &message, sizeof(message));
+      usleep(100000);
+
+      if(nr > 0) {
+        pthread_create(&tid, NULL, server, &message);
+        pthread_join(tid,NULL);
+      }
+    } while (nr > 0);
 
     unlink(fifoname);
 

@@ -79,29 +79,18 @@ int createPrivateFIFO(char *fifoname) {
 
   if(mkfifo(fifoname, 0660) < 0) {
     perror("FIFO error");
-  } else {
-    printf("Created FIFO - %s\n", fifoname);
   }
 
   return open(fifoname, O_RDONLY);
 }
 
-void sendOrder(int seq_i, int dur, pthread_t tid) {
-
-  struct Message message;
-
-  message.i = seq_i;
-  message.pid = getpid();
-  message.tid = tid;
-  message.dur = dur;
-  message.pl = -1;
-
-  printf("Sent Order - i: %d - dur: %d\n", message.i, message.dur);
-
+void sendOrder(struct Message message) {
   write(fd, &message, sizeof(message));
+
+  regist_message(message.i, message.pid, message.tid, message.dur, message.pl, "IWANT");
 }
 
-void getAnswer(char * fifoname, int int_answer) {
+struct Message getAnswer(char * fifoname, int int_answer) {
   struct Message answer;
   int n;
 
@@ -109,13 +98,18 @@ void getAnswer(char * fifoname, int int_answer) {
   usleep(100000);
 
   if (n > 0) {
-    printf("Received Answer - i: %d - pl: %d\n", answer.i, answer.pl);
+    if (answer.pl != -1)
+      regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "IAMIN");
+  } else {
+    answer.i = -1;
   }
+
+  return answer;
 }
 
 void *client(void *arg) {
 
-  int usingTime = rand() % MAXUSETIME;
+  int dur = rand() % MAXUSETIME;
   int seq_i;
   pthread_t tid;
   int int_answer;
@@ -128,12 +122,29 @@ void *client(void *arg) {
   seq_i = *((int*) arg);
   tid = syscall(SYS_gettid);
 
-  sendOrder(seq_i, usingTime, tid);
+  struct Message request;
+  struct Message answer;
+
+  request.i = seq_i;
+  request.pid = getpid();
+  request.tid = tid;
+  request.dur = dur;
+  request.pl = -1;
+
+  sendOrder(request);
 
   sprintf(fifoname, "/tmp/%d.%ld", pid, tid);
   int_answer = createPrivateFIFO(fifoname);
 
-  getAnswer(fifoname, int_answer);
+  answer = getAnswer(fifoname, int_answer);
+
+  if(answer.i == -1) {
+    regist_message(request.i, request.pid, request.tid, request.dur, request.pl, "FAILD");
+  }
+
+  if(answer.pl == -1) {
+    regist_message(request.i, request.pid, request.tid, request.dur, request.pl, "CLOSD");
+  }
 
   close(int_answer);
   unlink(fifoname);
@@ -177,8 +188,6 @@ int main(int argc, char *argv[]) {
   }
 
   get_options(argc, argv, options, &nsecs, name);
-
-  print_options(argc, options, nsecs, name);
 
   strcpy(fifoname, "/tmp/");
   strcat(fifoname, name);
