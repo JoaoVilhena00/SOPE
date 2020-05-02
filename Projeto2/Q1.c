@@ -131,15 +131,8 @@ void *server(void *arg) {
       pthread_exit(NULL);
     }
 
-    for(int i = 0; i < 5; i++) {
-      if(*(places + i) == 0) {
-        answer.pl = i + 1;
-        *(places + i) = 1;
-        break;
-      } else {
-        answer.pl = -1;
-      }
-    }
+    answer.pl = place_i;
+    place_i++;
 
     clock_gettime(CLOCK_REALTIME, &end);
     accum = ( end.tv_sec - start.tv_sec )
@@ -149,7 +142,6 @@ void *server(void *arg) {
     if(answer.pl != -1 && (request->dur / 1000.0  + accum) <= nsecs) {
       regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "ENTER");
       usleep(request->dur * 1000);
-      *(places + answer.pl - 1) = 0;
       regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "TIMUP");
     } else if(answer.pl != -1 && request->dur + accum > nsecs) {
       regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "2LATE");
