@@ -173,7 +173,6 @@ int main(int argc, char *argv[]) {
     char *options[8];
     char name[64];
     char fifoname[64];
-    print_argv(argc, argv);
 
     opened = 1;
 
@@ -184,8 +183,6 @@ int main(int argc, char *argv[]) {
     get_options(argc, argv, options, name);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-
-    print_options(argc, options, name);
 
     strcpy(fifoname, "/tmp/");
     strcat(fifoname, name);
@@ -218,8 +215,10 @@ int main(int argc, char *argv[]) {
                   / BILLION;
       }
 
-      pthread_create(&tid, NULL, server, &message);
-      pthread_join(tid,NULL);
+      if(nr > 0) {
+        pthread_create(&tid, NULL, server, &message);
+        pthread_join(tid,NULL);
+      }      
 
       clock_gettime(CLOCK_REALTIME, &end);
       accum = ( end.tv_sec - start.tv_sec )
