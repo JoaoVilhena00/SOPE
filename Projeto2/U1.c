@@ -109,7 +109,7 @@ void getAnswer(char * fifoname, int int_answer) {
   usleep(100000);
 
   if (n > 0) {
-    printf("Received Answer - i: %d\n", answer.i);
+    printf("Received Answer - i: %d - pl: %d\n", answer.i, answer.pl);
   }
 }
 
@@ -152,7 +152,7 @@ void create_threads(int nsecs, char *fifoname, int *seq_i) {
 void openFIFOforWriting(char *fifoname) {
 
   do {
-    if((fd = open("/tmp/door1", O_WRONLY)) == -1){
+    if((fd = open(fifoname, O_WRONLY)) == -1){
       perror("File Error");
     }
     if(fd == -1)
@@ -164,7 +164,8 @@ void openFIFOforWriting(char *fifoname) {
 
 int main(int argc, char *argv[]) {
   char *options[8];
-  char fifoname[15];
+  char name[64];
+  char fifoname[64];
   int nsecs = -1, seq_i = 1;
 
   struct timespec start;
@@ -175,9 +176,12 @@ int main(int argc, char *argv[]) {
     *(options + i) = (char *) malloc(15 * sizeof(char));
   }
 
-  get_options(argc, argv, options, &nsecs, fifoname);
+  get_options(argc, argv, options, &nsecs, name);
 
-  print_options(argc, options, nsecs, fifoname);
+  print_options(argc, options, nsecs, name);
+
+  strcpy(fifoname, "/tmp/");
+  strcat(fifoname, name);
 
   openFIFOforWriting(fifoname);
 

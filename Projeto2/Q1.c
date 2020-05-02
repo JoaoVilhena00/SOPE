@@ -12,6 +12,12 @@
 #define NUMTHRDS 10000
 #define BILLION  1000000000.0
 int fd;
+int place_i = 1;
+int * places;
+int nsecs = -1, nplaces = -1, nthreads = -1;
+struct timespec start;
+struct timespec end;
+double accum;
 
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
@@ -27,7 +33,7 @@ void print_usage() {
   exit(1);
 }
 
-void print_options(int argc, char *options[], int nsecs, int nplaces, int nthreads, char *fifoname) {
+void print_options(int argc, char *options[], char *fifoname) {
     if(nsecs != -1 || nplaces != -1 || nthreads != -1) {
         argc -= 1;
     }
@@ -48,7 +54,7 @@ void print_options(int argc, char *options[], int nsecs, int nplaces, int nthrea
     printf("-------------------------\n");
 }
 
-void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplaces, int *nthreads, char *fifoname) {
+void get_options(int argc, char *argv[], char *options[], char *fifoname) {
 
     int j=0;
 
@@ -62,24 +68,32 @@ void get_options(int argc, char *argv[], char *options[], int *nsecs, int *nplac
             i++;
             if(i >= argc)
                print_usage();
-            sscanf(argv[i], "%d", nsecs);
+            sscanf(argv[i], "%d", &nsecs);
         }else if(strcmp(argv[i], "-l") == 0) {
             i++;
             if(i >= argc) {
                 print_usage();
             }
-            sscanf(argv[i], "%d", nplaces);
+            sscanf(argv[i], "%d", &nplaces);
         }else if(strcmp(argv[i], "-n") == 0) {
             i++;
             if(i >= argc) {
                 print_usage();
             }
-            sscanf(argv[i], "%d", nthreads);
+            sscanf(argv[i], "%d", &nthreads);
         } else {
             strcpy(fifoname, argv[i]);
         }
         j++;
     }
+}
+
+void print_places() {
+  printf("\n----- PLACES -----\n");
+  for(int i = 0; i < 5; i++) {
+    printf("[%d]: %d\n", i, *(places+i));
+  }
+  printf("--------------------\n");
 }
 
 void *server(void *arg) {
@@ -110,7 +124,28 @@ void *server(void *arg) {
     answer.pid = pid;
     answer.tid = tid;
     answer.dur = request->dur;
-    answer.pl = -1;
+
+    for(int i = 0; i < 5; i++) {
+      if(*(places + i) == 0) {
+        answer.pl = i + 1;
+        *(places + i) = 1;
+        break;
+      } else {
+        answer.pl = -1;
+      }
+    }
+
+    clock_gettime(CLOCK_REALTIME, &end);
+    accum = ( end.tv_sec - start.tv_sec )
+            + ( end.tv_nsec - start.tv_nsec )
+              / BILLION;
+
+    if(answer.pl != -1 && request->dur + accum < nsecs){
+      usleep(request->dur * 1000);
+      *(places + answer.pl - 1) = 0;
+    }
+
+    print_places();
 
     write(int_answer, &answer, sizeof(answer));
 
@@ -121,15 +156,14 @@ void *server(void *arg) {
 
 void createPublicFIFO(char *fifoname) {
 
-    unlink("/tmp/door1");
+    unlink(fifoname);
 
-
-    if(mkfifo("/tmp/door1", 0660) < 0) {
+    if(mkfifo(fifoname, 0660) < 0) {
         perror("FIFO Error");
         exit(1);
     }
 
-    if((fd = open("/tmp/door1", O_RDONLY)) < 0){
+    if((fd = open(fifoname, O_RDONLY)) < 0){
         perror("File Error");
         exit(2);
     }
@@ -137,25 +171,26 @@ void createPublicFIFO(char *fifoname) {
 
 int main(int argc, char *argv[]) {
     char *options[8];
-    char fifoname[15];
-    int nsecs = -1, nplaces = -1, nthreads = -1;
+    char name[64];
+    char fifoname[64];
     print_argv(argc, argv);
-
-    struct timespec start;
-    struct timespec end;
-    double accum;
 
     for (int i = 0; i < 8; i++) {
         *(options + i) = (char *) malloc(15 * sizeof(char));
     }
 
-    get_options(argc, argv, options, &nsecs, &nplaces, &nthreads, fifoname);
+    get_options(argc, argv, options, name);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
-    print_options(argc, options, nsecs, nplaces, nthreads, fifoname);
+    print_options(argc, options, name);
+
+    strcpy(fifoname, "/tmp/");
+    strcat(fifoname, name);
 
     createPublicFIFO(fifoname);
+
+    places = (int *) calloc(20, sizeof(int));
 
     if(clock_gettime( CLOCK_REALTIME, &start) == -1 ) {
         perror( "clock gettime" );
@@ -191,9 +226,11 @@ int main(int argc, char *argv[]) {
     }
 
 
-    unlink("/tmp/door1");
+    unlink(fifoname);
 
     close(fd);
+
+    free(places);
 
     return 0;
 }
