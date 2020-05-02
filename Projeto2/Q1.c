@@ -112,7 +112,7 @@ void *server(void *arg) {
     answer.dur = request->dur;
     answer.pl = -1;
 
-    //write(int_answer, &answer, sizeof(answer));
+    write(int_answer, &answer, sizeof(answer));
 
     close(int_answer);
 

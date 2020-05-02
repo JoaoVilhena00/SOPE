@@ -101,6 +101,17 @@ void sendOrder(int seq_i, int dur, pthread_t tid) {
   write(fd, &message, sizeof(message));
 }
 
+void getAnswer(char * fifoname, int int_answer) {
+  struct Message answer;
+  int n;
+
+  n = read(int_answer, &answer, sizeof(answer));
+  usleep(100000);
+
+  if (n > 0) {
+    printf("Received Answer - i: %d\n", answer.i);
+  }
+}
 
 void *client(void *arg) {
 
@@ -121,6 +132,8 @@ void *client(void *arg) {
 
   sprintf(fifoname, "/tmp/%d.%ld", pid, tid);
   int_answer = createPrivateFIFO(fifoname);
+
+  getAnswer(fifoname, int_answer);
 
   close(int_answer);
   unlink(fifoname);
