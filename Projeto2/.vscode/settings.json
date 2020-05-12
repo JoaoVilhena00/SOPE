@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "auxiliary.h": "c"
+        "auxiliary.h": "c",
+        "file.h": "c",
+        "mman.h": "c",
+        "stat.h": "c"
     }
 }

@@ -5,12 +5,19 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
+#include <semaphore.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include "auxiliary.h"
 
 #define NUMTHRDS 10000
 #define BILLION  1000000000.0
+#define SHM_SIZE 10
+
 int fd;
 int place_i = 1;
 int * places;
@@ -19,6 +26,15 @@ struct timespec start;
 struct timespec end;
 double accum;
 int opened = 0;
+//struct Memory *shared;
+int shmfd;
+/*
+struct Memory {
+  int status;
+  int empty, full;
+};
+*/
+
 
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
@@ -173,14 +189,32 @@ int main(int argc, char *argv[]) {
     char *options[8];
     char name[64];
     char fifoname[64];
-
+    int shmid;
+    int *pt;
+    
     opened = 1;
 
     for (int i = 0; i < 8; i++) {
         *(options + i) = (char *) malloc(15 * sizeof(char));
     }
-
+    
     get_options(argc, argv, options, name);
+
+    if((shmid = shmget(IPC_PRIVATE, 1024, IPC_CREAT | IPC_EXCL | 0666)) == -1) {
+      perror("SHMGET Error");
+      exit(1);
+    }
+
+    pt = (int *) shmat(shmid, NULL, 0);
+    if((int *) pt == (int *)-1) {
+      perror("SHMAT Error");
+    }
+
+    pt[0] = 0;
+    pt[1] = nplaces;
+    
+
+    printf("%d %d\n", pt[0], pt[1]);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
@@ -245,7 +279,6 @@ int main(int argc, char *argv[]) {
     unlink(fifoname);
 
     close(fd);
-
     free(places);
 
     return 0;

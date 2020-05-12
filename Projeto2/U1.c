@@ -8,13 +8,29 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <time.h>
+#include <semaphore.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "auxiliary.h"
 
 #define NUMTHRDS 5
 #define MAXUSETIME 300
+#define SHM_SIZE 10
+
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 int fd, i = 0;
 #define BILLION  1000000000.0
+
+int empty, full;
+//struct Memory *shared;
+/*
+struct Memory {
+  int status;
+  int empty, full;
+};
+*/
 
 void print_usage() {
   printf("\nArguments not valid!");
@@ -178,16 +194,33 @@ int main(int argc, char *argv[]) {
   char name[64];
   char fifoname[64];
   int nsecs = -1, seq_i = 1;
-
+  int shmid;
   struct timespec start;
   struct timespec end;
   double accum;
+  int *pt;
 
   for (int i = 0; i < 8; i++) {
     *(options + i) = (char *) malloc(15 * sizeof(char));
   }
 
   get_options(argc, argv, options, &nsecs, name);
+
+  if((shmid = shmget(IPC_PRIVATE, 1024, 0666)) == -1) {
+    perror("SHMGET Error");
+    exit(1);
+  }
+  
+  pt = (int *) shmat(shmid, NULL, 0);
+  if((int *) pt == (int *)-1) {
+    perror("SHMAT  Error");
+    exit(1);
+  }
+
+  empty = pt[0];
+  full = pt[1];
+    
+  printf("%d %d\n", empty, full);
 
   strcpy(fifoname, "/tmp/");
   strcat(fifoname, name);
@@ -213,6 +246,7 @@ int main(int argc, char *argv[]) {
     seq_i++;
   }
 
+  
   close(fd);
   pthread_exit(0);
 }
