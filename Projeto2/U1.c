@@ -21,6 +21,7 @@
 
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 int fd, i = 0;
+int full, empty;
 #define BILLION  1000000000.0
 
 int empty, full;
