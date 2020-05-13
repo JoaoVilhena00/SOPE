@@ -119,14 +119,16 @@ void *client(void *arg) {
   int seq_i;
   pthread_t tid;
   int int_answer;
-
+  pthread_detach(tid = pthread_self());
   char fifoname[64];
+
   pid_t pid;
 
   pid = getpid();
 
   seq_i = *((int*) arg);
-  tid = syscall(SYS_gettid);
+
+ 
 
   struct Message request;
   struct Message answer;

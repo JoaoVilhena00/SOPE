@@ -26,6 +26,8 @@ double accum;
 int opened = 0;
 int full, empty;
 
+
+
 void print_argv(int argc, char *argv[]) {
   printf("\n----- PRINT ARGV -----\n");
   for (int i = 0; i < argc; i++) {
@@ -109,10 +111,10 @@ void *server(void *arg) {
     char fifo_answer[64];
     int int_answer;
     pid_t pid;
-    pthread_t tid;
 
-    pid = getpid();
-    tid = syscall(SYS_gettid);
+    pthread_t tid;
+    pthread_detach(tid = pthread_self());
+    pid=getpid();
 
     request = (struct Message *) arg;
     regist_message(request->i, request->pid, request->tid, request->dur, request->pl, "RECVD");
@@ -121,6 +123,7 @@ void *server(void *arg) {
     int_answer = open(fifo_answer, O_WRONLY);
 
     if (int_answer >= 0) {
+
     } else {
       regist_message(request->i, request->pid, request->tid, request->dur, request->pl, "GAVUP");
     }

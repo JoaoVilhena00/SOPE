@@ -11,7 +11,7 @@
 
 extern struct timespec start;
 
-void regist_message(int i, pid_t pid, pid_t tid, int dur, int pl, char *oper);
+void regist_message(int i, pid_t pid, pthread_t tid, int dur, int pl, char *oper);
 
 struct Message {
   int i;
