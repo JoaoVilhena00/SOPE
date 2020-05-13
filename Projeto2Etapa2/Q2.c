@@ -14,6 +14,11 @@
 #include <stdint.h>
 #include "auxiliary.h"
 
+
+
+sem_t nthreadsactive;//semaforo que dita o numero de threads
+
+struct Message * request;
 #define NUMTHRDS 10000
 #define BILLION  1000000000.0
 int fd;
@@ -25,6 +30,9 @@ struct timespec end;
 double accum;
 int opened = 0;
 int full, empty;
+
+int limited_threads = 0;  //set to 1 if number of threads is limited
+sem_t nthreadsactive;
 
 
 
@@ -106,7 +114,6 @@ void print_places() {
 }
 
 void *server(void *arg) {
-    struct Message * request;
     struct Message answer;
     char fifo_answer[64];
     int int_answer;
@@ -126,12 +133,15 @@ void *server(void *arg) {
 
     } else {
       regist_message(request->i, request->pid, request->tid, request->dur, request->pl, "GAVUP");
+    if (limited_threads) { sem_post(&nthreadsactive); }
+        return NULL;
     }
 
     answer.i = request->i;
     answer.pid = pid;
     answer.tid = tid;
     answer.dur = request->dur;
+    
 
     if (opened == 0) {
       answer.pl = -1;
@@ -149,19 +159,45 @@ void *server(void *arg) {
               / BILLION;
 
     if(answer.pl != -1 && (request->dur / 1000.0  + accum) <= nsecs) {
+         if (write(int_answer, &answer, sizeof(answer)) < 0) {
+            fprintf(stderr, "Error to private fifo with request %d (ACCEPTED)\n", request->i);
+            regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "GAVUP");
+
+             close(int_answer);
+
+              if (limited_threads) { sem_post(&nthreadsactive); }
+            return NULL;
+        }
+        close(int_answer);
+        
+      answer.pl = 1; // 
+    
       regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "ENTER");
       usleep(request->dur * 1000);
       regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "TIMUP");
+  
     } else if(answer.pl != -1 && request->dur + accum > nsecs) {
-      regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "2LATE");
+       answer.pl = -1;
+
+ if (write(int_answer, &answer, sizeof(answer)) < 0) {
+            fprintf(stderr, "Error on the request: %d \n", request->i);
+            regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "GAVUP");
+            close(int_answer); 
+
+            if (limited_threads) { sem_post(&nthreadsactive); } 
+            return NULL;
+        }
+
+ regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "2LATE");
+
     }
 
-    write(int_answer, &answer, sizeof(answer));
-
-    close(int_answer);
-
-    pthread_exit(NULL);
+if (limited_threads) { sem_post(&nthreadsactive); } /* sync threads */
+    close(int_answer);  /* nao há mais comunicação com o fifo privado */
+    return NULL;
 }
+   
+
 
 void createPublicFIFO(char *fifoname) {
 
@@ -213,6 +249,9 @@ int main(int argc, char *argv[]) {
 
     createPublicFIFO(fifoname);
 
+    if (nthreads) { limited_threads = 1; }
+    sem_init(&nthreadsactive, 0, nthreads);
+
     places = (int *) calloc(20, sizeof(int));
 
     if(clock_gettime( CLOCK_REALTIME, &start) == -1 ) {
@@ -248,27 +287,16 @@ int main(int argc, char *argv[]) {
       accum = ( end.tv_sec - start.tv_sec )
               + ( end.tv_nsec - start.tv_nsec )
                 / BILLION;
+
+
+         if (limited_threads) { sem_wait(&nthreadsactive); }  
+
+         pthread_create(&tid, NULL, server, &request);        
     }
 
-    opened = 0;
+unlink(fifoname);
 
-    pthread_t tid;
-    int nr = 0;
-    struct Message message;
-
-    do {
-      nr = read(fd, &message, sizeof(message));
-      usleep(100000);
-
-      if(nr > 0) {
-        pthread_create(&tid, NULL, server, &message);
-        pthread_join(tid,NULL);
-      }
-    } while (nr > 0);
-
-    unlink(fifoname);
-
-    close(fd);
+   close(fd);
 
     free(places);
 
