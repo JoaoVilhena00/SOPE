@@ -141,7 +141,7 @@ void *server(void *arg) {
     answer.pid = pid;
     answer.tid = tid;
     answer.dur = request->dur;
-    
+
 
     if (opened == 0) {
       answer.pl = -1;
@@ -169,22 +169,22 @@ void *server(void *arg) {
             return NULL;
         }
         close(int_answer);
-        
-      answer.pl = 1; // 
-    
+
+      answer.pl = 1; //
+
       regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "ENTER");
       usleep(request->dur * 1000);
       regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "TIMUP");
-  
+
     } else if(answer.pl != -1 && request->dur + accum > nsecs) {
        answer.pl = -1;
 
  if (write(int_answer, &answer, sizeof(answer)) < 0) {
             fprintf(stderr, "Error on the request: %d \n", request->i);
             regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "GAVUP");
-            close(int_answer); 
+            close(int_answer);
 
-            if (limited_threads) { sem_post(&nthreadsactive); } 
+            if (limited_threads) { sem_post(&nthreadsactive); }
             return NULL;
         }
 
@@ -196,7 +196,7 @@ if (limited_threads) { sem_post(&nthreadsactive); } /* sync threads */
     close(int_answer);  /* nao há mais comunicação com o fifo privado */
     return NULL;
 }
-   
+
 
 
 void createPublicFIFO(char *fifoname) {
@@ -244,8 +244,7 @@ int main(int argc, char *argv[]) {
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
-    strcpy(fifoname, "/tmp/");
-    strcat(fifoname, name);
+    strcpy(fifoname, name);
 
     createPublicFIFO(fifoname);
 
@@ -281,7 +280,7 @@ int main(int argc, char *argv[]) {
       if(nr > 0) {
         pthread_create(&tid, NULL, server, &message);
         pthread_join(tid,NULL);
-      }      
+      }
 
       clock_gettime(CLOCK_REALTIME, &end);
       accum = ( end.tv_sec - start.tv_sec )
@@ -289,14 +288,14 @@ int main(int argc, char *argv[]) {
                 / BILLION;
 
 
-         if (limited_threads) { sem_wait(&nthreadsactive); }  
+         if (limited_threads) { sem_wait(&nthreadsactive); }
 
-         pthread_create(&tid, NULL, server, &request);        
+         pthread_create(&tid, NULL, server, &request);
     }
 
-unlink(fifoname);
+    unlink(fifoname);
 
-   close(fd);
+    close(fd);
 
     free(places);
 
