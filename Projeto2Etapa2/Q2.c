@@ -15,8 +15,8 @@
 #include "auxiliary.h"
 
 
-
-sem_t nthreadsactive;//semaforo que dita o numero de threads
+int thread_counter=0;
+static sem_t nthreadsactive;//semaforo que dita o numero de threads
 
 struct Message * request;
 #define NUMTHRDS 10000
@@ -32,7 +32,7 @@ int opened = 0;
 int full, empty;
 
 int limited_threads = 0;  //set to 1 if number of threads is limited
-sem_t nthreadsactive;
+
 
 
 
@@ -249,8 +249,8 @@ int main(int argc, char *argv[]) {
 
     createPublicFIFO(fifoname);
 
-    if (nthreads) { limited_threads = 1; }
-    sem_init(&nthreadsactive, 0, nthreads);
+   if(nthreads>-1) limited_threads = 1; 
+   if(limited_threads) sem_init(&nthreadsactive, 0, nthreads);
 
     places = (int *) calloc(20, sizeof(int));
 
@@ -276,12 +276,17 @@ int main(int argc, char *argv[]) {
         accum = ( end.tv_sec - start.tv_sec )
                 + ( end.tv_nsec - start.tv_nsec )
                   / BILLION;
-      }
 
-      if(nr > 0) {
+      }
+    
+
+     if(nr > 0) {
+
+     if(limited_threads){ sem_wait(&nthreadsactive); }
         pthread_create(&tid, NULL, server, &message);
-        pthread_join(tid,NULL);
-      }      
+       pthread_join(tid,NULL);
+       thread_counter++;
+      }    
 
       clock_gettime(CLOCK_REALTIME, &end);
       accum = ( end.tv_sec - start.tv_sec )
@@ -291,10 +296,13 @@ int main(int argc, char *argv[]) {
 
          if (limited_threads) { sem_wait(&nthreadsactive); }  
 
-         pthread_create(&tid, NULL, server, &request);        
+         pthread_create(&tid, NULL, server, &request);  
+         thread_counter++;      
     }
 
-unlink(fifoname);
+    printf("number of threads: %d ",thread_counter);
+
+   unlink(fifoname);
 
    close(fd);
 
