@@ -96,7 +96,7 @@ void sendOrder(struct Message message) {
   regist_message(message.i, message.pid, message.tid, message.dur, message.pl, "IWANT");
 }
 
-struct Message getAnswer(char * fifoname, int int_answer) {
+struct Message getAnswer(int int_answer) {
   struct Message answer;
   int n;
 
@@ -127,7 +127,7 @@ char fifoname[64];
   pid = getpid();
 
   seq_i = *((int*) arg);
-  
+
  tid = pthread_self();
 
   struct Message request;
@@ -144,7 +144,7 @@ char fifoname[64];
   sprintf(fifoname, "/tmp/%d.%ld", pid, tid);
   int_answer = createPrivateFIFO(fifoname);
 
-  answer = getAnswer(fifoname, int_answer);
+  answer = getAnswer(int_answer);
 
   if(answer.i == -1) {
     regist_message(request.i, request.pid, request.tid, request.dur, request.pl, "FAILD");
@@ -160,7 +160,7 @@ char fifoname[64];
   pthread_exit(NULL);
 }
 
-void create_threads(int nsecs, char *fifoname, int *seq_i) {
+void create_threads(int *seq_i) {
   pthread_t tid;
 
   pthread_create(&tid, NULL, client, (void*) seq_i);
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
     perror("SHMGET Error");
     exit(1);
   }
-  
+
   pt = (int *) shmat(shmid, NULL, 0);
   if((int *) pt == (int *)-1) {
     perror("SHMAT  Error");
@@ -211,11 +211,10 @@ int main(int argc, char *argv[]) {
 
   empty = pt[0];
   full = pt[1];
-    
+
   printf("%d %d\n", empty, full);
 
-  strcpy(fifoname, "/tmp/");
-  strcat(fifoname, name);
+  strcpy(fifoname, name);
 
   openFIFOforWriting(fifoname);
 
@@ -230,7 +229,7 @@ int main(int argc, char *argv[]) {
             / BILLION;
 
   while(accum < nsecs){
-    create_threads(nsecs, fifoname, &seq_i);
+    create_threads(&seq_i);
     clock_gettime(CLOCK_REALTIME, &end);
     accum = ( end.tv_sec - start.tv_sec )
             + ( end.tv_nsec - start.tv_nsec )
