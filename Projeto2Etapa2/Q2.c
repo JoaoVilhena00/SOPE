@@ -1,164 +1,97 @@
+#include <sys/times.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <pthread.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/syscall.h>
 #include <semaphore.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdint.h>
+
+#include "Q2_aux.h"
 #include "auxiliary.h"
 
-static sem_t nthreadsactive; //semaforo que dita o numero de threads
-
-struct Message *request;
-#define NUMTHRDS 10000
-#define BILLION 1000000000.0
-
-int fd;
-int place_i = 1;
+#define MAX 64
+clock_t start;
+int nsecs = -1, nplaces = -1, nthreads = -1, public_fd, place_i, opened = 0;
+static sem_t nthreadsactive, nplacesactive;
 int *places;
-int nsecs = -1, nplaces = -1, nthreads = -1;
-struct timespec start;
-struct timespec end;
-double accum;
-int opened = 0;
-int limited_threads = 0; //set to 1 if number of threads is limited
-int cont = 0, nThread = 0;
-pthread_t tid[1000];
 
-void print_argv(int argc, char *argv[])
-{
-  printf("\n----- PRINT ARGV -----\n");
-  for (int i = 0; i < argc; i++)
-  {
-    printf("argv[%d]: %s\n", i, argv[i]);
-  }
-  printf("----------------------\n");
+void create_public_FIFO(char *fifoname) {
+  mkfifo(fifoname, 0660);
 }
 
-void print_usage()
-{
-  printf("\nArguments not valid!");
-  printf("\nUsage: Q1 <-t nsecs> [-l nplaces] [-n nthreads] fifoname\n");
-  exit(1);
+int open_private_FIFO(message_t *request) {
+  char *fifoname;
+
+  fifoname = (char *) malloc(MAX * sizeof(char));
+  sprintf(fifoname, "/tmp/%d.%ld", request->pid, request->tid);
+
+  return open(fifoname, O_WRONLY);
 }
 
-void print_options(int argc, char *options[], char *fifoname)
-{
-  if (nsecs != -1 || nplaces != -1 || nthreads != -1)
-  {
-    argc -= 1;
+void open_public_FIFO(char *fifoname) {
+  while((public_fd = open(fifoname, O_RDONLY)) == -1) {
+    perror("Error Opening Public FIFO");
+    sleep(1);
   }
-  printf("\n----- PRINT OPTIONS -----\n");
-  for (int i = 1; i < argc; i++)
-  {
-    printf("options[%d]: %s\n", i - 1, options[i - 1]);
-  }
-  if (nsecs != -1)
-  {
-    printf("nsecs = %d\n", nsecs);
-  }
-  if (nplaces != -1)
-  {
-    printf("nplaces = %d\n", nplaces);
-  }
-  if (nthreads != -1)
-  {
-    printf("nthreads = %d\n", nthreads);
-  }
-  printf("fifoname: %s\n", fifoname);
-  printf("-------------------------\n");
 }
 
-void get_options(int argc, char *argv[], char *options[], char *fifoname)
-{
-
-  int j = 0;
-
-  if (argc > 8)
-  {
-    print_usage();
-  }
-
-  for (int i = 1; i < argc; i++)
-  {
-    strcpy(options[j], argv[i]);
-    if (strcmp(argv[i], "-t") == 0)
-    {
-      i++;
-      if (i >= argc)
-        print_usage();
-      sscanf(argv[i], "%d", &nsecs);
-    }
-    else if (strcmp(argv[i], "-l") == 0)
-    {
-      i++;
-      if (i >= argc)
-      {
-        print_usage();
+void sendAnswer(message_t answer, int private_fd) {
+  if(answer.pl != -1) {
+    if(write(private_fd, &answer, sizeof(answer)) != -1) {
+      if(nplaces > 0) {
+        places[answer.pl] = 1;
       }
-      sscanf(argv[i], "%d", &nplaces);
+      register_message(&answer, "ENTER");
     }
-    else if (strcmp(argv[i], "-n") == 0)
-    {
-      i++;
-      if (i >= argc)
-      {
-        print_usage();
-      }
-      sscanf(argv[i], "%d", &nthreads);
+  } else {
+    if(write(private_fd, &answer, sizeof(answer)) != -1) {
+      register_message(&answer, "2LATE");
     }
-    else
-    {
-      strcpy(fifoname, argv[i]);
-    }
-    j++;
   }
 }
 
-void print_places()
-{
-  printf("\n----- PLACES -----\n");
-  for (int i = 0; i < 5; i++)
-  {
-    printf("[%d]: %d\n", i, *(places + i));
+int getFreePlace() {
+  int i;
+
+  for(i = 0; i < nplaces; i++) {
+    if (places[i] == 0)
+      return i;
   }
-  printf("--------------------\n");
+
+  return -1;
 }
 
-void *server(void *arg)
-{
-  struct Message answer;
-  char fifo_answer[64];
-  int int_answer;
-  pid_t pid;
+void emptyPlace(int n) {
+  places[n] = 0;
 
+}
+
+void *server(void *arg) {
   pthread_t tid;
-  pthread_detach(tid = pthread_self());
+  message_t *request;
+  int private_fd;
+  pid_t pid;
+  message_t answer;
+
   pid = getpid();
+  tid = pthread_self();
 
-  request = (struct Message *)arg;
-  regist_message(request->i, request->pid, request->tid, request->dur, request->pl, "RECVD");
+  pthread_detach(tid);
 
-  sprintf(fifo_answer, "/tmp/%d.%ld", request->pid, request->tid);
-  int_answer = open(fifo_answer, O_WRONLY);
+  request = (message_t *) arg;
 
-  if (int_answer >= 0)
-  {
-  }
-  else
-  {
-    regist_message(request->i, request->pid, request->tid, request->dur, request->pl, "GAVUP");
-    if (limited_threads)
-    {
+  register_message(request, "RECVD");
+
+  private_fd = open_private_FIFO(request);
+  if(private_fd == -1) {
+    register_message(request, "GAVUP");
+    if(nthreads > 0)
       sem_post(&nthreadsactive);
-    }
     return NULL;
   }
 
@@ -166,163 +99,81 @@ void *server(void *arg)
   answer.pid = pid;
   answer.tid = tid;
   answer.dur = request->dur;
-
-  if (opened == 0)
-  {
+  if(get_exec_time(start) + answer.dur * 0.0001 < (double) nsecs && opened) {
+    if(nplaces > 0) {
+      sem_wait(&nplacesactive);
+      answer.pl = getFreePlace();
+    } else {
+      answer.pl = place_i;
+      place_i++;
+    }
+  } else {
     answer.pl = -1;
-    write(int_answer, &answer, sizeof(answer));
-    regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "2LATE");
-    pthread_exit(NULL);
   }
 
-  answer.pl = place_i;
-  place_i++;
+  sendAnswer(answer, private_fd);
 
-  clock_gettime(CLOCK_REALTIME, &end);
-  accum = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / BILLION;
-
-  if (answer.pl != -1 && (request->dur / 1000.0 + accum) <= nsecs)
-  {
-    if (write(int_answer, &answer, sizeof(answer)) < 0)
-    {
-      fprintf(stderr, "Error to private fifo with request %d (ACCEPTED)\n", request->i);
-      regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "GAVUP");
-
-      close(int_answer);
-
-      if (limited_threads)
-      {
-        sem_post(&nthreadsactive);
-      }
-      return NULL;
-    }
-    close(int_answer);
-
-    answer.pl = 1; //
-
-    regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "ENTER");
+  if(answer.pl != -1) {
     usleep(request->dur * 1000);
-    regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "TIMUP");
-  }
-  else if (answer.pl != -1 && request->dur + accum > nsecs)
-  {
-    answer.pl = -1;
-
-    if (write(int_answer, &answer, sizeof(answer)) < 0)
-    {
-      fprintf(stderr, "Error on the request: %d \n", request->i);
-      regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "GAVUP");
-      close(int_answer);
-
-      if (limited_threads)
-      {
-        sem_post(&nthreadsactive);
-      }
-      return NULL;
-    }
-
-    regist_message(answer.i, answer.pid, answer.tid, answer.dur, answer.pl, "2LATE");
+    register_message(&answer, "TIMUP");
+    places[answer.pl] = 0;
+    sem_post(&nplacesactive);
   }
 
-  if (limited_threads)
-  {
+  close(private_fd);
+
+  if(nthreads > 0)
     sem_post(&nthreadsactive);
-  }                  /* sync threads */
-  close(int_answer); /* nao há mais comunicação com o fifo privado */
+
   return NULL;
 }
 
-void createPublicFIFO(char *fifoname)
-{
+int main(int argc, char *argv[]) {
+  struct tms t;
+  char *fifoname;
+  int rcode;
 
-  unlink(fifoname);
+  fifoname = (char *) malloc(MAX * sizeof(char));
+  get_options_Q2(argc, argv, &nsecs, fifoname, &nplaces, &nthreads);
 
-  if (mkfifo(fifoname, 0660) < 0)
-  {
-    perror("FIFO Error");
-    exit(1);
-  }
+  create_public_FIFO(fifoname);
+  open_public_FIFO(fifoname);
 
-  if ((fd = open(fifoname, O_RDONLY)) < 0)
-  {
-    perror("File Error");
-    exit(2);
-  }
-}
-
-int main(int argc, char *argv[])
-{
-  char *options[8];
-  char name[64];
-  char fifoname[64];
- 
+  start = times(&t); // Inicio da medicao do tempo
+  place_i = 1;
   opened = 1;
 
-  for (int i = 0; i < 8; i++)
-  {
-    *(options + i) = (char *)malloc(15 * sizeof(char));
+  if(nthreads > 0)
+    sem_init(&nthreadsactive, 0, nthreads);
+
+  if(nplaces > 0) {
+    places = (int *) calloc(nplaces, sizeof(int));
+    sem_init(&nplacesactive, 0, nplaces);
   }
 
-  get_options(argc, argv, options, name);
-
-  clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-
-  strcpy(fifoname, "/tmp/");
-  strcat(fifoname, name);
-
-  createPublicFIFO(fifoname);
-
-  if (nthreads)
-  {
-    limited_threads = 1;
-  }
-  sem_init(&nthreadsactive, 0, nthreads);
-
-  places = (int *)calloc(20, sizeof(int));
-
-  if (clock_gettime(CLOCK_REALTIME, &start) == -1)
-  {
-    perror("clock gettime");
-    exit(EXIT_FAILURE);
-  }
-
-  clock_gettime(CLOCK_REALTIME, &end);
-  accum = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / BILLION;
-
-  while (accum < nsecs)
-  {
+  do {
     pthread_t tid;
-    int nr = 0;
-    struct Message message;
+    message_t request;
 
-    while (nr <= 0 && accum < nsecs)
-    {
-      nr = read(fd, &message, sizeof(message));
-      usleep(100000);
-      clock_gettime(CLOCK_REALTIME, &end);
-      accum = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / BILLION;
+    if(get_exec_time(start) > (double) nsecs) {
+      opened = 0;
     }
 
-    
-      if (nr > 0)
-      {
-        if (limited_threads){sem_wait(&nthreadsactive);}
-        
-        pthread_create(&tid, NULL, server, &message);
-      
+    rcode = read(public_fd, &request, sizeof(request));
+    if(rcode == -1) {
+      printf("Error receiving Order!\n");
+    } else if(rcode > 0) {
+      if (nthreads > 0) {
+        sem_wait(&nthreadsactive);
+      }
+      pthread_create(&tid, NULL, server, &request);
     }
+  } while(rcode > 0);
 
-    clock_gettime(CLOCK_REALTIME, &end);
-    accum = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / BILLION;
-  }
-  
-  printf("%d\n", cont);
-  
+  close(public_fd);
   unlink(fifoname);
 
-  close(fd);
-  
-  free(places);
+  free(fifoname);
 
   return 0;
 }
