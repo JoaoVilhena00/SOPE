@@ -303,13 +303,13 @@ int main(int argc, char *argv[])
       accum = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / BILLION;
     }
 
-    if (limited_threads)
-    {
-      sem_wait(&nthreadsactive);
+    
       if (nr > 0)
       {
+        if (limited_threads){sem_wait(&nthreadsactive);}
+        
         pthread_create(&tid, NULL, server, &message);
-      }
+      
     }
 
     clock_gettime(CLOCK_REALTIME, &end);
