@@ -1,6 +1,6 @@
-
+  
 CC = gcc
-CFLAGS = -Wall -Wextra -pthread -pedantic
+CFLAGS = -Wall -pthread
 DEPS = auxiliary.h
 OBJ = auxiliary.o
 TARGETS = U2 Q2
@@ -20,8 +20,4 @@ Q2: $(OBJ)
 	@echo $@
 
 clean:
-<<<<<<< HEAD
-	@rm *.o $(TARGETS) -f
-=======
-	@rm *.o $(TARGETS) -f
->>>>>>> 7d1c8d7306b48f64894e4e61f249fcf64abf9ac6
+	@rm *.o $(TARGETS)
