@@ -174,6 +174,7 @@ int main(int argc, char *argv[]) {
   unlink(fifoname);
 
   free(fifoname);
+  free(places);
 
   return 0;
 }
