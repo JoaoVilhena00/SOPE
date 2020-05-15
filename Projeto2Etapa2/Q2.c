@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include "auxiliary.h"
 
-sem_t nthreadsactive; //semaforo que dita o numero de threads
+static sem_t nthreadsactive; //semaforo que dita o numero de threads
 
 struct Message *request;
 #define NUMTHRDS 10000
@@ -29,7 +29,6 @@ struct timespec end;
 double accum;
 int opened = 0;
 int limited_threads = 0; //set to 1 if number of threads is limited
-sem_t nthreadsactive;
 int cont = 0, nThread = 0;
 pthread_t tid[1000];
 
@@ -143,8 +142,6 @@ void *server(void *arg)
   pthread_t tid;
   pthread_detach(tid = pthread_self());
   pid = getpid();
-
-  
 
   request = (struct Message *)arg;
   regist_message(request->i, request->pid, request->tid, request->dur, request->pl, "RECVD");
@@ -309,11 +306,10 @@ int main(int argc, char *argv[])
     if (limited_threads)
     {
       sem_wait(&nthreadsactive);
-    }
-
-    if (nr > 0)
-    {
-      pthread_create(&tid, NULL, server, &message);
+      if (nr > 0)
+      {
+        pthread_create(&tid, NULL, server, &message);
+      }
     }
 
     clock_gettime(CLOCK_REALTIME, &end);
