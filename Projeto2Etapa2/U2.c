@@ -53,7 +53,7 @@ int readAnswer(int private_fd) {
   }
 
   if(answer.pl != -1)
-    register_message(&answer, "ENTER");
+    register_message(&answer, "IAMIN");
   else
     register_message(&answer, "CLOSD");
 
