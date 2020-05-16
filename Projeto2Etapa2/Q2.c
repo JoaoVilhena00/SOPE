@@ -44,7 +44,7 @@ void sendAnswer(message_t answer, int private_fd) {
   if(answer.pl != -1) {
     if(write(private_fd, &answer, sizeof(answer)) != -1) {
       if(nplaces > 0) {
-        places[answer.pl] = 1;
+        places[answer.pl - 1] = 1;
       }
       register_message(&answer, "ENTER");
     }
@@ -60,7 +60,7 @@ int getFreePlace() {
 
   for(i = 0; i < nplaces; i++) {
     if (places[i] == 0)
-      return i;
+      return i+1;
   }
 
   return -1;
@@ -115,9 +115,11 @@ void *server(void *arg) {
 
   if(answer.pl != -1) {
     usleep(request->dur * 1000);
+    if(nplaces > 0) {
+      places[answer.pl - 1] = 0;
+      sem_post(&nplacesactive);
+    }
     register_message(&answer, "TIMUP");
-    places[answer.pl] = 0;
-    sem_post(&nplacesactive);
   }
 
   close(private_fd);
