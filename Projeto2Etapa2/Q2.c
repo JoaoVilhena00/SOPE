@@ -26,11 +26,16 @@ void create_public_FIFO(char *fifoname) {
 
 int open_private_FIFO(message_t *request) {
   char *fifoname;
+  int r;
 
   fifoname = (char *) malloc(MAX * sizeof(char));
   sprintf(fifoname, "/tmp/%d.%ld", request->pid, request->tid);
 
-  return open(fifoname, O_WRONLY);
+  r = open(fifoname, O_WRONLY);
+
+  free(fifoname);
+
+  return r;
 }
 
 void open_public_FIFO(char *fifoname) {
@@ -174,6 +179,12 @@ int main(int argc, char *argv[]) {
 
   close(public_fd);
   unlink(fifoname);
+
+  if(nthreads > 0)
+    sem_destroy(&nthreadsactive);
+
+  if(nplaces > 0)
+    sem_destroy(&nplacesactive);
 
   free(fifoname);
   free(places);

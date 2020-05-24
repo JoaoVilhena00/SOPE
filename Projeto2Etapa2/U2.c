@@ -25,8 +25,10 @@ char *create_private_FIFO(message_t *request) {
   char *fifoname;
 
   fifoname = (char *) malloc(MAX * sizeof(char));
+
   sprintf(fifoname, "/tmp/%d.%ld", request->pid, request->tid);
   mkfifo(fifoname, 0660);
+
   return fifoname;
 }
 
@@ -37,6 +39,7 @@ int open_private_FIFO(char *fifoname) {
 void delete_private_FIFO(char *fifoname, int private_fd) {
   close(private_fd);
   unlink(fifoname);
+  free(fifoname);
 }
 
 void sendRequest(message_t request) {
